@@ -745,7 +745,7 @@
         <button type="button" class="btn-secondary" id="btn-clear">Clear All</button>
         <label class="trials-wrap">
           Trials
-          <input type="number" id="trials" min="1000" max="1000000" step="10000" value="100000" />
+          <input type="number" id="trials" min="1000" max="2000000" step="100000" value="1000000" />
         </label>
         <span class="card-counts" id="card-counts">P1: <b id="cc-p1">0</b>/6 &nbsp; Board: <b id="cc-b">0</b>/5 &nbsp; P2: <b id="cc-p2">0</b>/6</span>
       </div>
@@ -936,7 +936,18 @@ function buildFullDeck() {
   return d;
 }
 self.onmessage = function(e) {
-  const { p1hole6, p2hole6, knownBoard, trials } = e.data;
+  const { p1hole6, p2hole6, knownBoard, trialCount, workerId } = e.data;
+  if (trialCount <= 0) {
+    self.postMessage({
+      type: "result",
+      workerId: workerId,
+      data: {
+        p1Scoop: 0, p2Scoop: 0, p1HighOnly: 0, p2HighOnly: 0, p1LowOnly: 0, p2LowOnly: 0,
+        p1Quartered: 0, p2Quartered: 0, tieBoth: 0, tieHighNoLow: 0, trials: 0
+      }
+    });
+    return;
+  }
   const known = new Set();
   for (let i = 0; i < 6; i++) { known.add(p1hole6[i]); known.add(p2hole6[i]); }
   for (let j = 0; j < 5; j++) { if (knownBoard[j]) known.add(knownBoard[j]); }
@@ -965,8 +976,8 @@ self.onmessage = function(e) {
   let p1LowOnly = 0, p2LowOnly = 0, p1Quartered = 0, p2Quartered = 0;
   let tieBoth = 0, tieHighNoLow = 0, done = 0;
   const BATCH = 10000;
-  while (done < trials) {
-    const batchSize = Math.min(BATCH, trials - done);
+  while (done < trialCount) {
+    const batchSize = Math.min(BATCH, trialCount - done);
     for (let i = 0; i < batchSize; i++) {
       partialShuffleInPlace(deckArr, deckLen, need, swapI, swapJ);
       let di = 0;
@@ -996,32 +1007,16 @@ self.onmessage = function(e) {
       else if (lowWinner !== -1 && highWinner === 0 && lowWinner === 0) tieBoth++;
       done++;
     }
-    self.postMessage({ type: "progress", done: done, trials: trials });
+    self.postMessage({ type: "progress", done: done, trialCount: trialCount, workerId: workerId });
   }
-  const t = done;
-  const tieBothFrac = tieBoth / t;
-  const tieHighNoLowFrac = tieHighNoLow / t;
-  const tieFrac = tieBothFrac + tieHighNoLowFrac;
   self.postMessage({
     type: "result",
-    p1: {
-      scoop: p1Scoop / t,
-      highOnly: p1HighOnly / t,
-      lowOnly: p1LowOnly / t,
-      quartered: p1Quartered / t,
-      lose: p2Scoop / t
-    },
-    p2: {
-      scoop: p2Scoop / t,
-      highOnly: p2HighOnly / t,
-      lowOnly: p2LowOnly / t,
-      quartered: p2Quartered / t,
-      lose: p1Scoop / t
-    },
-    tieBoth: tieBothFrac,
-    tieHighNoLow: tieHighNoLowFrac,
-    tieFrac: tieFrac,
-    trials: t
+    workerId: workerId,
+    data: {
+      p1Scoop: p1Scoop, p2Scoop: p2Scoop, p1HighOnly: p1HighOnly, p2HighOnly: p2HighOnly,
+      p1LowOnly: p1LowOnly, p2LowOnly: p2LowOnly, p1Quartered: p1Quartered, p2Quartered: p2Quartered,
+      tieBoth: tieBoth, tieHighNoLow: tieHighNoLow, trials: done
+    }
   });
 };
   </script>
@@ -1999,6 +1994,113 @@ self.onmessage = function(e) {
       }
     }
 
+    async function runMultiWorkerSim(p1hole6, p2hole6, knownBoard, totalTrials, onProgress) {
+      const numWorkers = Math.max(1, (navigator.hardwareConcurrency || 4) - 1);
+      const base = Math.floor(totalTrials / numWorkers);
+      const rem = totalTrials % numWorkers;
+      const trialCounts = [];
+      for (let wi = 0; wi < numWorkers; wi++) trialCounts.push(base + (wi < rem ? 1 : 0));
+
+      const workerProgress = new Array(numWorkers).fill(0);
+      const blob = new Blob([SIM_WORKER_SRC], { type: "application/javascript" });
+      const workerUrl = URL.createObjectURL(blob);
+      const workers = [];
+
+      const res = await new Promise((resolve, reject) => {
+        let settled = false;
+        const cleanupAll = () => {
+          for (const w of workers) w.terminate();
+          URL.revokeObjectURL(workerUrl);
+          state.simCancelWorker = null;
+        };
+        const finish = val => {
+          if (settled) return;
+          settled = true;
+          cleanupAll();
+          resolve(val);
+        };
+        const fail = err => {
+          if (settled) return;
+          settled = true;
+          cleanupAll();
+          reject(err);
+        };
+
+        state.simCancelWorker = () => finish(null);
+
+        const results = new Array(numWorkers);
+        let resultsIn = 0;
+
+        for (let wi = 0; wi < numWorkers; wi++) {
+          const worker = new Worker(workerUrl);
+          workers.push(worker);
+          worker.onmessage = e => {
+            if (e.data.type === "progress") {
+              workerProgress[e.data.workerId] = e.data.done;
+              const totalDone = workerProgress.reduce((a, b) => a + b, 0);
+              onProgress(totalDone, totalTrials, numWorkers);
+            } else if (e.data.type === "result") {
+              results[e.data.workerId] = e.data.data;
+              resultsIn++;
+              if (resultsIn === numWorkers) {
+                const summed = {
+                  p1Scoop: 0, p2Scoop: 0, p1HighOnly: 0, p2HighOnly: 0, p1LowOnly: 0, p2LowOnly: 0,
+                  p1Quartered: 0, p2Quartered: 0, tieBoth: 0, tieHighNoLow: 0, trials: 0
+                };
+                for (const r of results) {
+                  if (!r) continue;
+                  summed.p1Scoop += r.p1Scoop;
+                  summed.p2Scoop += r.p2Scoop;
+                  summed.p1HighOnly += r.p1HighOnly;
+                  summed.p2HighOnly += r.p2HighOnly;
+                  summed.p1LowOnly += r.p1LowOnly;
+                  summed.p2LowOnly += r.p2LowOnly;
+                  summed.p1Quartered += r.p1Quartered;
+                  summed.p2Quartered += r.p2Quartered;
+                  summed.tieBoth += r.tieBoth;
+                  summed.tieHighNoLow += r.tieHighNoLow;
+                  summed.trials += r.trials;
+                }
+                const T = summed.trials;
+                const tieBothFrac = summed.tieBoth / T;
+                const tieHighNoLowFrac = summed.tieHighNoLow / T;
+                finish({
+                  p1: {
+                    scoop: summed.p1Scoop / T,
+                    highOnly: summed.p1HighOnly / T,
+                    lowOnly: summed.p1LowOnly / T,
+                    quartered: summed.p1Quartered / T,
+                    lose: summed.p2Scoop / T
+                  },
+                  p2: {
+                    scoop: summed.p2Scoop / T,
+                    highOnly: summed.p2HighOnly / T,
+                    lowOnly: summed.p2LowOnly / T,
+                    quartered: summed.p2Quartered / T,
+                    lose: summed.p1Scoop / T
+                  },
+                  tieBoth: tieBothFrac,
+                  tieHighNoLow: tieHighNoLowFrac,
+                  tieFrac: tieBothFrac + tieHighNoLowFrac,
+                  trials: T
+                });
+              }
+            }
+          };
+          worker.onerror = fail;
+          worker.postMessage({
+            p1hole6: p1hole6,
+            p2hole6: p2hole6,
+            knownBoard: knownBoard,
+            trialCount: trialCounts[wi],
+            workerId: wi
+          });
+        }
+      });
+
+      return res;
+    }
+
     document.getElementById("btn-clear").addEventListener("click", () => {
       if (typeof state.simCancelWorker === "function") {
         state.simCancelWorker();
@@ -2032,68 +2134,39 @@ self.onmessage = function(e) {
       }
       let trials = parseInt(document.getElementById("trials").value, 10);
       if (Number.isNaN(trials) || trials < 1000) trials = 10000;
-      if (trials > 1000000) trials = 1000000;
+      if (trials > 2000000) trials = 2000000;
 
       const cancelBtn = document.getElementById("btn-cancel-sim");
+      const numWorkers = Math.max(1, (navigator.hardwareConcurrency || 4) - 1);
       state.simRunning = true;
       state.abortSim = false;
       document.getElementById("btn-run").disabled = true;
       cancelBtn.hidden = false;
       elProgress.classList.add("active");
       elProgressFill.style.width = "0%";
-      elProgressMeta.textContent = "0% — 0 / " + trials.toLocaleString() + " trials";
+      elProgressMeta.textContent = "Running on " + numWorkers + " cores...";
       refreshAll();
 
       const knownBoard = state.board.map(c => c || null);
 
-      const blob = new Blob([SIM_WORKER_SRC], { type: "application/javascript" });
-      const workerUrl = URL.createObjectURL(blob);
-      const worker = new Worker(workerUrl);
-
-      let workerClean = false;
-      const cleanupWorker = () => {
-        if (workerClean) return;
-        workerClean = true;
-        worker.terminate();
-        URL.revokeObjectURL(workerUrl);
-        state.simCancelWorker = null;
-        cancelBtn.hidden = true;
-      };
-
       let res;
       try {
-        res = await new Promise((resolve, reject) => {
-          state.simCancelWorker = () => {
-            cleanupWorker();
-            resolve(null);
-          };
-          worker.onmessage = e => {
-            if (e.data.type === "progress") {
-              const frac = e.data.trials ? e.data.done / e.data.trials : 0;
-              const pct = (frac * 100).toFixed(1);
-              elProgressFill.style.width = pct + "%";
-              const doneN = Math.min(trials, e.data.done);
-              elProgressMeta.textContent =
-                pct + "% — " + doneN.toLocaleString() + " / " + trials.toLocaleString() + " trials";
-            } else if (e.data.type === "result") {
-              cleanupWorker();
-              resolve(e.data);
-            }
-          };
-          worker.onerror = err => {
-            cleanupWorker();
-            reject(err);
-          };
-          worker.postMessage({ p1hole6: p1, p2hole6: p2, knownBoard: knownBoard, trials: trials });
+        res = await runMultiWorkerSim(p1, p2, knownBoard, trials, (totalDone, totalTrials, nw) => {
+          const frac = totalTrials ? totalDone / totalTrials : 0;
+          const pct = (frac * 100).toFixed(1);
+          elProgressFill.style.width = pct + "%";
+          elProgressMeta.textContent =
+            pct + "% — " +
+            totalDone.toLocaleString() + " / " + totalTrials.toLocaleString() + " trials (" + nw + " cores)";
         });
       } catch (err) {
-        cleanupWorker();
         console.error(err);
         res = null;
       }
 
       state.simRunning = false;
       document.getElementById("btn-run").disabled = false;
+      cancelBtn.hidden = true;
       elProgress.classList.remove("active");
       elProgressMeta.textContent = "";
       refreshAll();
