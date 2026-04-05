@@ -45,68 +45,112 @@
     }
 
     body {
-      padding: 16px 16px 32px;
-      max-width: 720px;
+      padding: 10px;
+      max-width: 1280px;
       margin: 0 auto;
+      overflow-x: hidden;
     }
 
-    header {
+    .compact-header {
       text-align: center;
-      margin-bottom: 16px;
+      margin-bottom: 10px;
     }
 
-    header h1 {
-      font-size: clamp(1.35rem, 4vw, 1.75rem);
+    .compact-header h1 {
+      font-size: clamp(1.05rem, 2.5vw, 1.35rem);
       font-weight: 700;
-      margin: 0 0 0.35rem;
+      margin: 0 0 0.2rem;
       letter-spacing: -0.02em;
     }
 
-    header p {
+    .compact-header p {
       margin: 0;
-      font-size: 0.85rem;
+      font-size: 0.72rem;
       color: var(--text-dim);
-      line-height: 1.45;
+      line-height: 1.35;
     }
 
     .main-stack {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 10px;
     }
 
     .section-card {
       background: rgba(0, 0, 0, 0.2);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 14px;
-      padding: 14px;
+      padding: 10px;
     }
 
-    .section-title {
-      margin: 0 0 12px;
-      font-size: 1rem;
+    .players-wrap { position: relative; }
+
+    .players-two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .section-head-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
+
+    .section-head-btn {
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .section-head-btn:hover { color: #fff; }
+
+    .btn-add-cards {
+      font-family: inherit;
+      font-size: 0.7rem;
       font-weight: 600;
       color: var(--text-dim);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      padding: 3px 8px;
+      cursor: pointer;
+    }
+
+    .btn-add-cards:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.22); }
+
+    .section-complete {
+      font-size: 0.85rem;
+      color: #38d39f;
+      font-weight: 700;
     }
 
     .card-row {
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 12px;
+      flex-wrap: nowrap;
+      gap: 5px;
+      margin-bottom: 4px;
     }
 
     .slot {
-      width: 62px;
-      height: 88px;
-      border-radius: 8px;
+      width: 48px;
+      height: 64px;
+      border-radius: 6px;
       border: 2px dashed rgba(255, 255, 255, 0.2);
       background: var(--slot-empty);
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
       flex-shrink: 0;
       position: relative;
     }
@@ -118,7 +162,7 @@
 
     .slot.slot-next {
       border: 2px solid #38d39f;
-      animation: slotPulse 2s ease-in-out infinite;
+      box-shadow: 0 0 12px rgba(56, 211, 159, 0.45);
     }
 
     .slot.sim-lock {
@@ -127,7 +171,7 @@
     }
 
     .slot-placeholder {
-      font-size: 1.5rem;
+      font-size: 1.1rem;
       font-weight: 300;
       color: rgba(232, 240, 232, 0.35);
       line-height: 1;
@@ -137,148 +181,241 @@
     .slot .card-mini {
       width: 100%;
       height: 100%;
-      border-radius: 6px;
+      border-radius: 5px;
     }
 
-    .hand-badges {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      align-items: flex-start;
-    }
-
-    .badge-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.78rem;
-      font-weight: 600;
-    }
-
-    .badge {
-      padding: 3px 10px;
-      border-radius: 20px;
-      max-width: 100%;
-      word-break: break-word;
-    }
-
-    .badge-high {
-      background: rgba(74, 158, 255, 0.28);
-      border: 1px solid rgba(74, 158, 255, 0.55);
-      color: #cfe6ff;
-    }
-
-    .badge-low {
-      background: rgba(168, 85, 247, 0.28);
-      border: 1px solid rgba(168, 85, 247, 0.5);
-      color: #ecd4ff;
-    }
-
-    .badge-low-muted {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+    .hand-line {
+      font-size: 0.76rem;
       color: var(--text-dim);
+      line-height: 1.35;
+      margin: 0;
     }
 
-    .badge-low-warn {
-      background: rgba(244, 208, 79, 0.18);
-      border: 1px solid rgba(244, 208, 79, 0.45);
-      color: #f4e6a8;
-    }
+    .hand-line .hi { color: #9ecfff; }
+    .hand-line .lo { color: #d8b4fe; }
+    .hand-line .lo-warn { color: #f4d03f; }
+    .hand-line .lo-muted { color: rgba(232, 240, 232, 0.45); }
 
     .board-columns {
       display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 12px;
+      flex-wrap: nowrap;
+      gap: 5px;
+      margin-bottom: 4px;
     }
 
     .board-col {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
-      width: 62px;
+      gap: 3px;
+      width: 48px;
+      flex-shrink: 0;
     }
 
     .board-col-label {
-      font-size: 0.62rem;
+      font-size: 0.58rem;
       text-transform: uppercase;
-      letter-spacing: 0.07em;
+      letter-spacing: 0.05em;
       color: var(--text-dim);
       text-align: center;
-    }
-
-    .board-low-pill {
-      font-size: 0.62rem;
-      font-weight: 600;
-      padding: 2px 6px;
-      border-radius: 10px;
-      background: rgba(168, 85, 247, 0.35);
-      border: 1px solid rgba(168, 85, 247, 0.6);
-      color: #f0e0ff;
-      white-space: nowrap;
-    }
-
-    .slot.is-board-low .card-mini { position: relative; }
-
-    .slot.is-board-low .card-mini::after {
-      content: "";
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #a855f7;
-      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
-      pointer-events: none;
+      line-height: 1.1;
     }
 
     .low-board-hint {
-      font-size: 0.84rem;
+      font-size: 0.74rem;
       margin: 0;
       font-weight: 600;
-      line-height: 1.45;
+      line-height: 1.35;
     }
 
     .low-board-hint.low-sum-imp { color: #ff6b6b; }
     .low-board-hint.low-sum-warn { color: #ffc048; }
     .low-board-hint.low-sum-ok { color: #52d4a3; }
 
+    .picker-mount {
+      overflow: hidden;
+    }
+
+    .inline-picker {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.2s ease;
+    }
+
+    .inline-picker.is-open {
+      max-height: 220px;
+    }
+
+    .inline-picker-panel {
+      position: relative;
+      padding: 8px 6px 6px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      margin-top: 6px;
+    }
+
+    .picker-done {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      z-index: 2;
+      font-family: inherit;
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 5px;
+      padding: 3px 8px;
+      cursor: pointer;
+    }
+
+    .picker-done:hover { color: var(--text); }
+
+    .picker-grid-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding-top: 22px;
+    }
+
+    .picker-suit-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .picker-suit-label {
+      width: 22px;
+      font-size: 0.95rem;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .picker-suit-label.spades, .picker-suit-label.clubs { color: #e8f0e8; }
+    .picker-suit-label.hearts, .picker-suit-label.diamonds { color: var(--red); }
+
+    .picker-suit-cards {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 3px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .picker-cell {
+      width: 38px;
+      height: 50px;
+      border-radius: 5px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.72rem;
+      background: #fff;
+      color: var(--black);
+      transition: transform 0.08s, opacity 0.12s;
+      padding: 0;
+      font-family: inherit;
+      flex-shrink: 0;
+    }
+
+    .picker-cell .pc-rank { font-size: 0.72rem; line-height: 1; }
+    .picker-cell .pc-suit { font-size: 0.55rem; line-height: 1; margin-top: 1px; }
+
+    .picker-cell.red { color: var(--red); }
+
+    .picker-cell:hover:not(.used) { transform: scale(1.05); }
+
+    .picker-cell.used {
+      opacity: 0.2;
+      pointer-events: none;
+      cursor: not-allowed;
+    }
+
+    .eq-head-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+
+    .eq-section-title {
+      margin: 0;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+
+    .eq-legend-right {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      justify-content: flex-end;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+    }
+
+    .eq-legend-right span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .eq-legend-right i {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
     .controls-row {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
     }
 
-    .controls-row .trials-wrap {
+    .controls-row .card-counts {
       margin-left: auto;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .controls-row .card-counts b { color: var(--text); font-weight: 600; }
+
+    .controls-row .trials-wrap {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 0.85rem;
+      gap: 6px;
+      font-size: 0.72rem;
       color: var(--text-dim);
     }
 
     .controls-row .trials-wrap input {
-      width: 5.5rem;
-      padding: 0.45rem 0.5rem;
-      border-radius: 6px;
+      width: 4.5rem;
+      padding: 0.35rem 0.4rem;
+      border-radius: 5px;
       border: 1px solid var(--slot-border);
       background: rgba(0, 0, 0, 0.35);
       color: var(--text);
       font-family: inherit;
+      font-size: 0.72rem;
       text-align: right;
     }
 
     button {
       font-family: inherit;
-      font-size: 0.95rem;
+      font-size: 0.8rem;
       font-weight: 600;
-      padding: 0.75rem 1.4rem;
+      padding: 0.5rem 0.95rem;
       border-radius: 8px;
       border: none;
       cursor: pointer;
@@ -314,7 +451,7 @@
     }
 
     .progress-wrap {
-      margin-top: 14px;
+      margin-top: 8px;
       display: none;
     }
 
@@ -345,21 +482,21 @@
     }
 
     .bar-row {
-      margin-bottom: 10px;
+      margin-bottom: 6px;
     }
 
     .bar-row .bar-label {
-      font-size: 0.75rem;
+      font-size: 0.68rem;
       font-weight: 600;
       color: var(--text-dim);
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     .eq-bar {
       display: flex;
       flex-direction: row;
       width: 100%;
-      height: 28px;
+      height: 22px;
       border-radius: 6px;
       overflow: hidden;
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -379,11 +516,11 @@
     }
 
     .eq-bar .seg-lbl {
-      font-size: 0.72rem;
+      font-size: 0.62rem;
       font-weight: 600;
       color: #fff;
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
-      padding: 0 4px;
+      padding: 0 2px;
       white-space: nowrap;
     }
 
@@ -394,153 +531,29 @@
     .eq-bar .seg.ls { background: var(--lose-bar); }
     .eq-bar .seg.ch { background: rgba(255, 255, 255, 0.18); }
 
-    .eq-legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px 20px;
-      margin-top: 12px;
+    .eq-stats {
       font-size: 0.76rem;
       color: var(--text-dim);
-    }
-
-    .eq-legend span {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .eq-legend i {
-      width: 12px;
-      height: 12px;
-      border-radius: 3px;
-      flex-shrink: 0;
-    }
-
-    .eq-stats {
-      font-size: 0.72rem;
-      color: var(--text-dim);
-      margin: 12px 0 0;
-      line-height: 1.55;
+      margin: 4px 0 0;
+      line-height: 1.4;
     }
 
     .eq-stats strong { color: var(--text); }
 
     .result-meta {
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       color: var(--text-dim);
-      margin-top: 12px;
-      padding: 10px 12px;
+      margin-top: 8px;
+      padding: 8px 10px;
       background: rgba(0, 0, 0, 0.2);
       border-radius: 8px;
       border: 1px solid var(--slot-border);
     }
 
-    .picker-section .picker-heading {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-dim);
-      margin-bottom: 10px;
-    }
-
-    .pick-pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 14px;
-    }
-
-    .pick-pill {
-      font-family: inherit;
-      font-size: 0.8rem;
-      font-weight: 600;
-      padding: 8px 14px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      background: rgba(0, 0, 0, 0.25);
-      color: var(--text-dim);
-      cursor: pointer;
-      transition: background 0.15s, border-color 0.15s, color 0.15s;
-    }
-
-    .pick-pill:hover {
-      color: var(--text);
-      border-color: rgba(255, 255, 255, 0.28);
-    }
-
-    .pick-pill.active {
-      border-color: #38d39f;
-      background: rgba(56, 211, 159, 0.18);
-      color: #b8f5dc;
-    }
-
-    .picker-grid-rows {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .picker-suit-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: nowrap;
-    }
-
-    .picker-suit-label {
-      width: 28px;
-      font-size: 1.1rem;
-      text-align: center;
-      flex-shrink: 0;
-    }
-
-    .picker-suit-label.spades, .picker-suit-label.clubs { color: #e8f0e8; }
-    .picker-suit-label.hearts, .picker-suit-label.diamonds { color: var(--red); }
-
-    .picker-suit-cards {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      flex: 1;
-      min-width: 0;
-    }
-
-    .picker-cell {
-      width: 44px;
-      height: 56px;
-      border-radius: 6px;
-      border: 1px solid rgba(0, 0, 0, 0.12);
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      background: #fff;
-      color: var(--black);
-      transition: transform 0.1s, opacity 0.15s;
-      padding: 0;
-      font-family: inherit;
-    }
-
-    .picker-cell .pc-rank { font-size: 0.95rem; line-height: 1; }
-    .picker-cell .pc-suit { font-size: 0.65rem; line-height: 1; margin-top: 2px; }
-
-    .picker-cell.red { color: var(--red); }
-
-    .picker-cell:hover:not(.used) {
-      transform: scale(1.04);
-    }
-
-    .picker-cell.used {
-      opacity: 0.25;
-      pointer-events: none;
-      cursor: not-allowed;
-    }
-
     footer {
-      margin-top: 20px;
+      margin-top: 10px;
       text-align: center;
-      font-size: 0.72rem;
+      font-size: 0.65rem;
       color: var(--text-dim);
     }
 
@@ -549,24 +562,24 @@
       width: 100%;
       height: 100%;
       background: #fff;
-      border-radius: 6px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
+      border-radius: 5px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
       border: 1px solid rgba(0, 0, 0, 0.06);
-      padding: 6px 7px;
+      padding: 3px 5px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
     }
 
     .card-face .rank {
-      font-size: 1.1rem;
+      font-size: 0.8rem;
       font-weight: 700;
       line-height: 1;
     }
 
     .card-face .suit-br {
       align-self: flex-end;
-      font-size: 1.15rem;
+      font-size: 0.9rem;
       line-height: 1;
       margin-top: auto;
     }
@@ -581,32 +594,67 @@
   </style>
 </head>
 <body>
-  <header>
+  <header class="compact-header">
     <h1>PLO6 Hi/Lo Hand Equity Visualizer</h1>
     <p>6-card Omaha Hi/Lo (8-or-better) · Must use exactly 2 hole cards + 3 board cards</p>
   </header>
 
   <main class="main-stack">
-    <section class="section-card" id="sec-p1">
-      <h2 class="section-title">Player 1</h2>
-      <div class="card-row holes" id="p1-slots"></div>
-      <div class="hand-badges" id="p1-meta"></div>
+    <section class="section-card players-wrap">
+      <div class="players-two-col">
+        <div class="player-col">
+          <div class="section-head-row">
+            <button type="button" class="section-head-btn" id="head-p1" data-open="p1">Player 1</button>
+            <button type="button" class="btn-add-cards" id="add-p1" data-open="p1">+ Add cards</button>
+            <span class="section-complete" id="done-p1" hidden>✓</span>
+          </div>
+          <div class="card-row holes" id="p1-slots"></div>
+          <p class="hand-line" id="p1-meta"></p>
+        </div>
+        <div class="player-col">
+          <div class="section-head-row">
+            <button type="button" class="section-head-btn" id="head-p2" data-open="p2">Player 2</button>
+            <button type="button" class="btn-add-cards" id="add-p2" data-open="p2">+ Add cards</button>
+            <span class="section-complete" id="done-p2" hidden>✓</span>
+          </div>
+          <div class="card-row holes" id="p2-slots"></div>
+          <p class="hand-line" id="p2-meta"></p>
+        </div>
+      </div>
+
+      <div id="picker-mount-players" class="picker-mount">
+        <div id="inline-picker" class="inline-picker" aria-hidden="true">
+          <div class="inline-picker-panel">
+            <button type="button" class="picker-done" id="picker-done">✕ Done</button>
+            <div class="picker-grid-rows" id="picker-grid"></div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="section-card" id="sec-board">
-      <h2 class="section-title">Board</h2>
+      <div class="section-head-row">
+        <button type="button" class="section-head-btn" id="head-board" data-open="board">Board</button>
+        <button type="button" class="btn-add-cards" id="add-board" data-open="board">+ Add cards</button>
+        <span class="section-complete" id="done-board" hidden>✓</span>
+      </div>
       <div class="board-columns" id="board-columns"></div>
       <p class="low-board-hint" id="low-hint"></p>
-    </section>
 
-    <section class="section-card" id="sec-p2">
-      <h2 class="section-title">Player 2</h2>
-      <div class="card-row holes" id="p2-slots"></div>
-      <div class="hand-badges" id="p2-meta"></div>
+      <div id="picker-mount-board" class="picker-mount"></div>
     </section>
 
     <section class="section-card" id="sec-equity">
-      <h2 class="section-title">Equity</h2>
+      <div class="eq-head-row">
+        <h2 class="eq-section-title">Equity</h2>
+        <div class="eq-legend-right" aria-hidden="true">
+          <span><i style="background:#38d39f"></i> Scoop</span>
+          <span><i style="background:#4a9eff"></i> High</span>
+          <span><i style="background:#a855f7"></i> Low</span>
+          <span><i style="background:#ffb432"></i> Qtd</span>
+          <span><i style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15)"></i> Lose</span>
+        </div>
+      </div>
       <div class="bar-row">
         <div class="bar-label">P1</div>
         <div class="eq-bar" id="bar-p1"></div>
@@ -614,13 +662,6 @@
       <div class="bar-row">
         <div class="bar-label">P2</div>
         <div class="eq-bar" id="bar-p2"></div>
-      </div>
-      <div class="eq-legend" aria-hidden="true">
-        <span><i style="background:#38d39f"></i> Scoop</span>
-        <span><i style="background:#4a9eff"></i> High only</span>
-        <span><i style="background:#a855f7"></i> Low only</span>
-        <span><i style="background:#ffb432"></i> Quartered</span>
-        <span><i style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15)"></i> Lose</span>
       </div>
       <p class="eq-stats" id="eq-text-p1"></p>
       <p class="eq-stats" id="eq-text-p2"></p>
@@ -635,17 +676,12 @@
           Trials
           <input type="number" id="trials" min="1000" max="250000" step="1000" value="10000" />
         </label>
+        <span class="card-counts" id="card-counts">P1: <b id="cc-p1">0</b>/6 &nbsp; Board: <b id="cc-b">0</b>/5 &nbsp; P2: <b id="cc-p2">0</b>/6</span>
       </div>
       <div class="progress-wrap" id="progress-wrap">
         <div class="progress-bar"><div id="progress-fill"></div></div>
         <div class="progress-meta" id="progress-meta"></div>
       </div>
-    </section>
-
-    <section class="section-card picker-section" id="sec-picker">
-      <div class="picker-heading">Pick cards for</div>
-      <div class="pick-pills" id="pick-pills"></div>
-      <div class="picker-grid-rows" id="picker-grid"></div>
     </section>
   </main>
 
@@ -932,13 +968,12 @@
       p2: Array(6).fill(null),
       board: Array(5).fill(null),
       pickTarget: "p1",
+      activeSection: null,
       simRunning: false,
       abortSim: false
     };
 
-    const LOW_RANK_SET = new Set(["A", "2", "3", "4", "5", "6", "7", "8"]);
     const BOARD_LABELS = ["Flop", "Flop", "Flop", "Turn", "River"];
-    const PICK_ORDER = ["p1", "board", "p2"];
 
     const elP1 = document.getElementById("p1-slots");
     const elP2 = document.getElementById("p2-slots");
@@ -952,11 +987,9 @@
     const elEqP1 = document.getElementById("eq-text-p1");
     const elEqP2 = document.getElementById("eq-text-p2");
     const elResultMeta = document.getElementById("result-meta");
-    const elPickPills = document.getElementById("pick-pills");
-
-    function isLowRankCard(c) {
-      return !!(c && LOW_RANK_SET.has(c[0]));
-    }
+    const elInlinePicker = document.getElementById("inline-picker");
+    const elMountPlayers = document.getElementById("picker-mount-players");
+    const elMountBoard = document.getElementById("picker-mount-board");
 
     function getCard(ref, index) {
       if (ref === "p1") return state.p1[index];
@@ -975,65 +1008,35 @@
       return i === -1 ? null : i;
     }
 
-    function advancePickTarget() {
-      let i = PICK_ORDER.indexOf(state.pickTarget);
-      for (let step = 0; step < 3; step++) {
-        i = (i + 1) % 3;
-        const r = PICK_ORDER[i];
-        const arr = r === "p1" ? state.p1 : r === "p2" ? state.p2 : state.board;
-        if (firstEmptyIndex(arr) !== null) {
-          state.pickTarget = r;
-          return;
-        }
-      }
+    function mountPickerHost(section) {
+      const host = section === "board" ? elMountBoard : elMountPlayers;
+      if (elInlinePicker.parentNode !== host) host.appendChild(elInlinePicker);
     }
 
-    function placeNextCard(card) {
+    function openPicker(section) {
       if (state.simRunning) return;
-      if (usedSet().has(card)) return;
-      for (let guard = 0; guard < 6; guard++) {
-        const r = state.pickTarget;
-        const arr = r === "p1" ? state.p1 : r === "p2" ? state.p2 : state.board;
-        const idx = firstEmptyIndex(arr);
-        if (idx !== null) {
-          setCard(r, idx, card);
-          if (firstEmptyIndex(arr) === null) advancePickTarget();
-          refreshAll();
-          return;
-        }
-        advancePickTarget();
-      }
+      state.activeSection = section;
+      state.pickTarget = section;
+      mountPickerHost(section);
+      elInlinePicker.classList.add("is-open");
+      elInlinePicker.setAttribute("aria-hidden", "false");
+      buildPickerGrid();
+      refreshPickerUsed();
+      markNextSlot();
+      updateSectionChrome();
     }
 
-    function updatePillActive() {
-      document.querySelectorAll(".pick-pill").forEach(b => {
-        b.classList.toggle("active", b.dataset.target === state.pickTarget);
-      });
+    function closePicker() {
+      state.activeSection = null;
+      elInlinePicker.classList.remove("is-open");
+      elInlinePicker.setAttribute("aria-hidden", "true");
+      document.querySelectorAll(".slot").forEach(s => s.classList.remove("slot-next"));
+      updateSectionChrome();
     }
 
-    function initPickPills() {
-      elPickPills.innerHTML = "";
-      [
-        { id: "p1", label: "Player 1" },
-        { id: "board", label: "Board" },
-        { id: "p2", label: "Player 2" }
-      ].forEach(p => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "pick-pill";
-        b.textContent = p.label;
-        b.dataset.target = p.id;
-        b.addEventListener("click", () => {
-          state.pickTarget = p.id;
-          updatePillActive();
-          markNextSlot();
-        });
-        elPickPills.appendChild(b);
-      });
-      updatePillActive();
-    }
-
+    let pickerGridBuilt = false;
     function buildPickerGrid() {
+      if (pickerGridBuilt) return;
       const root = document.getElementById("picker-grid");
       root.innerHTML = "";
       SUITS.forEach(suit => {
@@ -1058,6 +1061,24 @@
         row.appendChild(cards);
         root.appendChild(row);
       });
+      pickerGridBuilt = true;
+    }
+
+    function placeNextCard(card) {
+      if (state.simRunning || !state.activeSection) return;
+      if (usedSet().has(card)) return;
+      const r = state.pickTarget;
+      if (r !== state.activeSection) return;
+      const arr = r === "p1" ? state.p1 : r === "p2" ? state.p2 : state.board;
+      const idx = firstEmptyIndex(arr);
+      if (idx === null) {
+        closePicker();
+        return;
+      }
+      setCard(r, idx, card);
+      refreshAll();
+      const arr2 = r === "p1" ? state.p1 : r === "p2" ? state.p2 : state.board;
+      if (firstEmptyIndex(arr2) === null) closePicker();
     }
 
     function refreshPickerUsed() {
@@ -1069,7 +1090,7 @@
 
     function markNextSlot() {
       document.querySelectorAll(".slot").forEach(s => s.classList.remove("slot-next"));
-      if (state.simRunning) return;
+      if (state.simRunning || !state.activeSection) return;
       const r = state.pickTarget;
       const arr = r === "p1" ? state.p1 : r === "p2" ? state.p2 : state.board;
       const idx = firstEmptyIndex(arr);
@@ -1078,10 +1099,28 @@
       if (sel) sel.classList.add("slot-next");
     }
 
+    function updateSectionChrome() {
+      const p1n = state.p1.filter(Boolean).length;
+      const p2n = state.p2.filter(Boolean).length;
+      const bn = state.board.filter(Boolean).length;
+      document.getElementById("cc-p1").textContent = String(p1n);
+      document.getElementById("cc-p2").textContent = String(p2n);
+      document.getElementById("cc-b").textContent = String(bn);
+      const showAdd = n => n < 6;
+      const showAddB = bn < 5;
+      document.getElementById("add-p1").style.display = showAdd(p1n) ? "" : "none";
+      document.getElementById("add-p2").style.display = showAdd(p2n) ? "" : "none";
+      document.getElementById("add-board").style.display = showAddB ? "" : "none";
+      document.getElementById("done-p1").hidden = p1n < 6;
+      document.getElementById("done-p2").hidden = p2n < 6;
+      document.getElementById("done-board").hidden = bn < 5;
+    }
+
     function refreshAll() {
       refreshSlots();
       refreshPickerUsed();
-      updatePillActive();
+      updateSectionChrome();
+      markNextSlot();
     }
 
     function usedSet() {
@@ -1109,13 +1148,9 @@
 
     function boardLowSummary() {
       const nLow = boardLowCards(state.board);
-      if (nLow <= 2) {
-        return { cls: "low-sum-imp", text: "✗ Low impossible (need 3+ low-ranked cards on board)" };
-      }
-      if (nLow === 3) {
-        return { cls: "low-sum-warn", text: "⚠ Low possible — exactly 3 low cards" };
-      }
-      return { cls: "low-sum-ok", text: "✓ Low likely — 4+ low cards on board" };
+      if (nLow <= 2) return { cls: "low-sum-imp", text: "✗ Low impossible" };
+      if (nLow === 3) return { cls: "low-sum-warn", text: "⚠ Low possible" };
+      return { cls: "low-sum-ok", text: "✓ Low likely" };
     }
 
     function lowLabelContextForPlayer() {
@@ -1124,6 +1159,13 @@
       if (filled < 5) return "incomplete";
       if (nLow <= 2) return "impossible";
       return "ok";
+    }
+
+    function escAttr(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/"/g, "&quot;");
     }
 
     function updateHandLabels() {
@@ -1136,39 +1178,25 @@
       const p1Meta = document.getElementById("p1-meta");
       const p2Meta = document.getElementById("p2-meta");
 
-      function playerBadges(pNum) {
+      function playerLine(pNum) {
         const hKey = pNum === 1 ? "p1h" : "p2h";
         const lKey = pNum === 1 ? "p1l" : "p2l";
         const has6 = (pNum === 1 ? state.p1 : state.p2).filter(Boolean).length === 6;
         if (!has6) {
-          return "<div class=\"badge-row\"><span class=\"badge badge-high\">High: —</span></div>"
-            + "<div class=\"badge-row\"><span class=\"badge badge-low-muted\">Low: —</span></div>";
+          return "<span class=\"hi\">High:</span> — · <span class=\"lo-muted\">Low:</span> —";
         }
         const hi = meta[hKey];
         const lo = meta[lKey];
-        const highText = hi ? hi.label : "—";
-        let lowClass = "badge-low";
-        let lowText;
-        if (lo) {
-          lowText = lo.label;
-        } else if (ctx === "incomplete") {
-          lowClass = "badge-low-warn";
-          lowText = "Board incomplete";
-        } else if (ctx === "impossible") {
-          lowClass = "badge-low-muted";
-          lowText = "No qualifier";
-        } else {
-          lowClass = "badge-low-muted";
-          lowText = "No qualifier";
-        }
-        return "<div class=\"badge-row\"><span class=\"label-dim\" style=\"color:var(--text-dim);margin-right:4px\">High:</span>"
-          + "<span class=\"badge badge-high\">" + highText + "</span></div>"
-          + "<div class=\"badge-row\"><span class=\"label-dim\" style=\"color:var(--text-dim);margin-right:4px\">Low:</span>"
-          + "<span class=\"badge " + lowClass + "\">" + lowText + "</span></div>";
+        const highText = hi ? escAttr(hi.label) : "—";
+        let lowHtml;
+        if (lo) lowHtml = "<span class=\"lo\">" + escAttr(lo.label) + "</span>";
+        else if (ctx === "incomplete") lowHtml = "<span class=\"lo-warn\">Board incomplete</span>";
+        else lowHtml = "<span class=\"lo-muted\">No qualifier</span>";
+        return "<span class=\"hi\">High:</span> " + highText + " · <span class=\"lo-muted\">Low:</span> " + lowHtml;
       }
 
-      p1Meta.innerHTML = playerBadges(1);
-      p2Meta.innerHTML = playerBadges(2);
+      p1Meta.innerHTML = playerLine(1);
+      p2Meta.innerHTML = playerLine(2);
     }
 
     function makeSlot(ref, index) {
@@ -1178,7 +1206,6 @@
       slot.dataset.index = String(index);
       const c = getCard(ref, index);
       if (c) {
-        if (ref === "board" && isLowRankCard(c)) slot.classList.add("is-board-low");
         const wrap = document.createElement("div");
         wrap.className = "card-mini";
         wrap.appendChild(renderCardFace(c));
@@ -1195,11 +1222,10 @@
         if (cur) {
           setCard(ref, index, null);
           refreshAll();
+          openPicker(ref);
           return;
         }
-        state.pickTarget = ref;
-        updatePillActive();
-        markNextSlot();
+        openPicker(ref);
       });
       return slot;
     }
@@ -1209,7 +1235,7 @@
       elP2.innerHTML = "";
       elBoard.innerHTML = "";
       for (let i = 0; i < 6; i++) elP1.appendChild(makeSlot("p1", i));
-      const nLowBoard = boardLowCards(state.board);
+      for (let i = 0; i < 6; i++) elP2.appendChild(makeSlot("p2", i));
       for (let i = 0; i < 5; i++) {
         const col = document.createElement("div");
         col.className = "board-col";
@@ -1218,21 +1244,8 @@
         lab.textContent = BOARD_LABELS[i];
         col.appendChild(lab);
         col.appendChild(makeSlot("board", i));
-        const bc = state.board[i];
-        if (bc && isLowRankCard(bc)) {
-          const pill = document.createElement("div");
-          pill.className = "board-low-pill";
-          pill.textContent = nLowBoard + "/5 low cards";
-          col.appendChild(pill);
-        } else {
-          const hold = document.createElement("div");
-          hold.style.height = "24px";
-          hold.setAttribute("aria-hidden", "true");
-          col.appendChild(hold);
-        }
         elBoard.appendChild(col);
       }
-      for (let i = 0; i < 6; i++) elP2.appendChild(makeSlot("p2", i));
       updateHandLabels();
       if (state.simRunning) {
         document.querySelectorAll(".slot").forEach(s => s.classList.add("sim-lock"));
@@ -1251,6 +1264,10 @@
 
     function formatPct(x) {
       return (x * 100).toFixed(1) + "%";
+    }
+
+    function formatPctInt(x) {
+      return Math.round(x * 100) + "%";
     }
 
     function setBar(el, parts, mirror, tieFrac = 0) {
@@ -1306,6 +1323,8 @@
       state.p2 = Array(6).fill(null);
       state.board = Array(5).fill(null);
       state.pickTarget = "p1";
+      elMountPlayers.appendChild(elInlinePicker);
+      closePicker();
       elResultMeta.style.display = "none";
       elProgress.classList.remove("active");
       elProgressMeta.textContent = "";
@@ -1363,19 +1382,19 @@
       setBar(elBarP1, p1w, false, tieF);
       setBar(elBarP2, p2w, true, tieF);
 
-      elEqP1.innerHTML =
-        "<strong>Player 1</strong> — Scoop: " + formatPct(p1w.scoop) +
-        " · High only: " + formatPct(p1w.highOnly) +
-        " · Low only: " + formatPct(p1w.lowOnly) +
-        " · Qtd: " + formatPct(p1w.quartered) +
-        " · Lose: " + formatPct(p1w.lose);
+      elEqP1.textContent =
+        "P1: Scoop " + formatPctInt(p1w.scoop) +
+        " · High " + formatPctInt(p1w.highOnly) +
+        " · Low " + formatPctInt(p1w.lowOnly) +
+        " · Qtd " + formatPctInt(p1w.quartered) +
+        " · Lose " + formatPctInt(p1w.lose);
 
-      elEqP2.innerHTML =
-        "<strong>Player 2</strong> — Scoop: " + formatPct(p2w.scoop) +
-        " · High only: " + formatPct(p2w.highOnly) +
-        " · Low only: " + formatPct(p2w.lowOnly) +
-        " · Qtd: " + formatPct(p2w.quartered) +
-        " · Lose: " + formatPct(p2w.lose);
+      elEqP2.textContent =
+        "P2: Scoop " + formatPctInt(p2w.scoop) +
+        " · High " + formatPctInt(p2w.highOnly) +
+        " · Low " + formatPctInt(p2w.lowOnly) +
+        " · Qtd " + formatPctInt(p2w.quartered) +
+        " · Lose " + formatPctInt(p2w.lose);
 
       const n = res.trials;
       const ci1 = wilsonCI(p1w.scoop, n);
@@ -1391,7 +1410,39 @@
         `P2 [${formatPct(ci2.lo)}, ${formatPct(ci2.hi)}]`;
     });
 
-    initPickPills();
+    document.getElementById("picker-done").addEventListener("click", closePicker);
+    document.querySelectorAll("[data-open]").forEach(el => {
+      el.addEventListener("click", () => openPicker(el.dataset.open));
+    });
+
+    document.addEventListener("mousedown", e => {
+      if (!state.activeSection || state.simRunning) return;
+      const t = e.target;
+      if (elInlinePicker.contains(t)) return;
+      if (t.closest(".slot")) return;
+      if (t.closest("[data-open]")) return;
+      closePicker();
+    }, true);
+
+    document.addEventListener("keydown", e => {
+      if (state.simRunning) return;
+      const t = e.target;
+      const tag = t && t.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || (t && t.isContentEditable)) return;
+      if (e.key === "1") {
+        e.preventDefault();
+        openPicker("p1");
+      } else if (e.key === "2") {
+        e.preventDefault();
+        openPicker("p2");
+      } else if (e.key === "b" || e.key === "B") {
+        e.preventDefault();
+        openPicker("board");
+      } else if (e.key === "Escape") {
+        closePicker();
+      }
+    });
+
     buildPickerGrid();
     const empty = { scoop: 0, highOnly: 0, lowOnly: 0, quartered: 0, lose: 1 };
     setBar(elBarP1, empty, false, 0);
