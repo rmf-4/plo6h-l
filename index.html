@@ -594,6 +594,35 @@
   </style>
 </head>
 <body>
+  <script>
+    (async function() {
+      try {
+        const GITHUB_USER = 'rmf-4';
+        const GITHUB_REPO = 'plo6h-l';
+
+        let page = 1;
+        let total = 0;
+        while (true) {
+          const res = await fetch(
+            `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/commits?per_page=100&page=${page}`
+          );
+          if (!res.ok) break;
+          const data = await res.json();
+          if (!Array.isArray(data) || data.length === 0) break;
+          total += data.length;
+          if (data.length < 100) break;
+          page++;
+        }
+
+        if (total > 0) {
+          document.title = `PLO6 Hi/Lo Visualizer — Version ${total}`;
+          const h1 = document.querySelector('h1');
+          if (h1) h1.textContent = `PLO6 Hi/Lo Hand Equity Visualizer — Version ${total}`;
+        }
+      } catch (e) {
+      }
+    })();
+  </script>
   <header class="compact-header">
     <h1>PLO6 Hi/Lo Hand Equity Visualizer</h1>
     <p>6-card Omaha Hi/Lo (8-or-better) · Must use exactly 2 hole cards + 3 board cards</p>
