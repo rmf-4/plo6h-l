@@ -790,55 +790,16 @@
       return { highWinner, lowWinner };
     }
 
-    /**
-     * One trial → mutually exclusive buckets per player (sum to trials when ties excluded).
-     * tieHighNoLow: tied high, no qualifying low → entire pot chopped (tracked separately).
-     * tieBoth: tied high and tied low → pot chopped (tracked separately).
-     */
-    function applyTrialOutcome(tallies, highWinner, lowWinner) {
-      const p1 = tallies.p1;
-      const p2 = tallies.p2;
-
-      if (lowWinner === -1 && highWinner === 0) {
-        tallies.tieHighNoLow++;
-        return;
-      }
-      if (lowWinner === -1) {
-        if (highWinner === 1) { p1.scoop++; p2.lose++; }
-        else { p2.scoop++; p1.lose++; }
-        return;
-      }
-
-      if (highWinner === 0 && lowWinner === 0) {
-        tallies.tieBoth++;
-        return;
-      }
-
-      if (highWinner === 1 && lowWinner === 1) { p1.scoop++; p2.lose++; return; }
-      if (highWinner === 2 && lowWinner === 2) { p2.scoop++; p1.lose++; return; }
-
-      if (lowWinner === 0) {
-        if (highWinner === 1) { p1.quartered++; p2.lose++; return; }
-        if (highWinner === 2) { p2.quartered++; p1.lose++; return; }
-      }
-
-      if (highWinner === 1 && lowWinner === 2) { p1.highOnly++; p2.lowOnly++; return; }
-      if (highWinner === 2 && lowWinner === 1) { p2.highOnly++; p1.lowOnly++; return; }
-
-      if (highWinner === 0 && lowWinner === 1) { p1.lowOnly++; p2.lose++; return; }
-      if (highWinner === 0 && lowWinner === 2) { p2.lowOnly++; p1.lose++; return; }
-    }
-
     async function simulateHiLo(p1hole6, p2hole6, knownBoard, trials, onProgress, shouldContinue) {
       const known = new Set([...p1hole6, ...p2hole6, ...knownBoard.filter(Boolean)]);
       const fullDeck = buildFullDeck().filter(c => !known.has(c));
 
-      const tallies = {
-        p1: { scoop: 0, highOnly: 0, lowOnly: 0, quartered: 0, lose: 0 },
-        p2: { scoop: 0, highOnly: 0, lowOnly: 0, quartered: 0, lose: 0 },
-        tieBoth: 0,
-        tieHighNoLow: 0
-      };
+      let p1Scoop = 0, p2Scoop = 0;
+      let p1HighOnly = 0, p2HighOnly = 0;
+      let p1LowOnly = 0, p2LowOnly = 0;
+      let p1Quartered = 0, p2Quartered = 0;
+      let tieBoth = 0;
+      let tieHighNoLow = 0;
       let done = 0;
 
       const BATCH = 500;
@@ -857,7 +818,64 @@
           }
 
           const { highWinner, lowWinner } = tallyShowdown(p1hole6, p2hole6, board);
-          applyTrialOutcome(tallies, highWinner, lowWinner);
+
+          // No low qualifies on this runout — high winner scoops entire pot
+          if (lowWinner === -1) {
+            if (highWinner === 1) p1Scoop++;
+            else if (highWinner === 2) p2Scoop++;
+            else { p1HighOnly += 0.5; p2HighOnly += 0.5; }
+          }
+          // At least one low qualifies
+          else {
+            // P1 scoops — wins both high and low outright
+            if (highWinner === 1 && lowWinner === 1) {
+              p1Scoop++;
+            }
+            // P2 scoops — wins both high and low outright
+            else if (highWinner === 2 && lowWinner === 2) {
+              p2Scoop++;
+            }
+            // Complete tie — both tie high AND both tie low
+            else if (highWinner === 0 && lowWinner === 0) {
+              p1HighOnly += 0.5; p2HighOnly += 0.5;
+              p1LowOnly += 0.5; p2LowOnly += 0.5;
+            }
+            // Clean split — P1 wins high, P2 wins low
+            else if (highWinner === 1 && lowWinner === 2) {
+              p1HighOnly++; p2LowOnly++;
+            }
+            // Clean split — P2 wins high, P1 wins low
+            else if (highWinner === 2 && lowWinner === 1) {
+              p2HighOnly++; p1LowOnly++;
+            }
+            // P1 wins high outright, low is tied — P1 gets 75%, P2 gets 25%
+            // Both players are "quartered" on the low side
+            else if (highWinner === 1 && lowWinner === 0) {
+              p1HighOnly++;
+              p1Quartered++;
+              p2Quartered++;
+            }
+            // P2 wins high outright, low is tied — P2 gets 75%, P1 gets 25%
+            else if (highWinner === 2 && lowWinner === 0) {
+              p2HighOnly++;
+              p1Quartered++;
+              p2Quartered++;
+            }
+            // Tie high, P1 wins low — each gets 50% of high half, P1 gets full low half
+            else if (highWinner === 0 && lowWinner === 1) {
+              p1HighOnly += 0.5; p2HighOnly += 0.5;
+              p1LowOnly++;
+            }
+            // Tie high, P2 wins low
+            else if (highWinner === 0 && lowWinner === 2) {
+              p1HighOnly += 0.5; p2HighOnly += 0.5;
+              p2LowOnly++;
+            }
+          }
+
+          if (lowWinner === -1 && highWinner === 0) tieHighNoLow++;
+          else if (lowWinner !== -1 && highWinner === 0 && lowWinner === 0) tieBoth++;
+
           done++;
         }
 
@@ -866,25 +884,25 @@
       }
 
       const t = done;
-      const tieBothFrac = tallies.tieBoth / t;
-      const tieHighNoLowFrac = tallies.tieHighNoLow / t;
+      const tieBothFrac = tieBoth / t;
+      const tieHighNoLowFrac = tieHighNoLow / t;
       const tieFrac = tieBothFrac + tieHighNoLowFrac;
 
-      function finalize(side) {
-        const s = tallies[side];
-        const den = t;
-        return {
-          scoop: s.scoop / den,
-          highOnly: s.highOnly / den,
-          lowOnly: s.lowOnly / den,
-          quartered: s.quartered / den,
-          lose: s.lose / den
-        };
-      }
-
       return {
-        p1: finalize("p1"),
-        p2: finalize("p2"),
+        p1: {
+          scoop: p1Scoop / t,
+          highOnly: p1HighOnly / t,
+          lowOnly: p1LowOnly / t,
+          quartered: p1Quartered / t,
+          lose: p2Scoop / t
+        },
+        p2: {
+          scoop: p2Scoop / t,
+          highOnly: p2HighOnly / t,
+          lowOnly: p2LowOnly / t,
+          quartered: p2Quartered / t,
+          lose: p1Scoop / t
+        },
         tieBoth: tieBothFrac,
         tieHighNoLow: tieHighNoLowFrac,
         tieFrac,
