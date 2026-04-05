@@ -83,7 +83,18 @@
       padding: 10px;
     }
 
-    .players-wrap { position: relative; }
+    .players-wrap {
+      position: relative;
+    }
+
+    #sec-board {
+      position: relative;
+    }
+
+    .players-wrap:has(.card-picker.is-open),
+    #sec-board:has(.card-picker.is-open) {
+      z-index: 50;
+    }
 
     .players-two-col {
       display: grid;
@@ -233,32 +244,48 @@
     .low-board-hint.low-sum-ok { color: #52d4a3; }
 
     .picker-mount {
-      overflow: hidden;
+      position: relative;
+      height: 0;
+      overflow: visible;
     }
 
-    .inline-picker {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.2s ease;
+    .inline-picker.card-picker {
+      position: absolute;
+      z-index: 100;
+      top: 8px;
+      left: 0;
+      width: fit-content;
+      max-width: 560px;
+      background: #0f2b22;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      overflow: visible;
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease, visibility 0.15s ease;
     }
 
-    .inline-picker.is-open {
-      max-height: 220px;
+    .inline-picker.card-picker.is-open {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
     }
 
     .inline-picker-panel {
       position: relative;
-      padding: 8px 6px 6px;
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      margin-top: 6px;
+      padding: 0;
+      background: transparent;
+      border: none;
+      margin: 0;
     }
 
     .picker-done {
       position: absolute;
-      top: 6px;
-      right: 6px;
+      top: 0;
+      right: 0;
       z-index: 2;
       font-family: inherit;
       font-size: 0.68rem;
@@ -276,19 +303,19 @@
     .picker-grid-rows {
       display: flex;
       flex-direction: column;
-      gap: 3px;
-      padding-top: 22px;
+      gap: 2px;
+      padding-top: 26px;
     }
 
     .picker-suit-row {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 2px;
     }
 
     .picker-suit-label {
-      width: 22px;
-      font-size: 0.95rem;
+      width: 18px;
+      font-size: 0.8rem;
       text-align: center;
       flex-shrink: 0;
     }
@@ -299,15 +326,16 @@
     .picker-suit-cards {
       display: flex;
       flex-wrap: nowrap;
-      gap: 3px;
+      gap: 0;
       flex: 1;
       min-width: 0;
     }
 
     .picker-cell {
-      width: 38px;
-      height: 50px;
-      border-radius: 5px;
+      width: 34px;
+      height: 44px;
+      border-radius: 4px;
+      margin: 2px;
       border: 1px solid rgba(0, 0, 0, 0.12);
       cursor: pointer;
       display: flex;
@@ -315,26 +343,33 @@
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       background: #fff;
       color: var(--black);
-      transition: transform 0.08s, opacity 0.12s;
+      transition: transform 0.08s;
       padding: 0;
       font-family: inherit;
       flex-shrink: 0;
     }
 
-    .picker-cell .pc-rank { font-size: 0.72rem; line-height: 1; }
-    .picker-cell .pc-suit { font-size: 0.55rem; line-height: 1; margin-top: 1px; }
+    .picker-cell .pc-rank { font-size: 0.68rem; line-height: 1; }
+    .picker-cell .pc-suit { font-size: 0.5rem; line-height: 1; margin-top: 1px; }
 
     .picker-cell.red { color: var(--red); }
 
     .picker-cell:hover:not(.used) { transform: scale(1.05); }
 
     .picker-cell.used {
-      opacity: 0.2;
+      opacity: 0.22;
       pointer-events: none;
       cursor: not-allowed;
+      background: #e8e8e8;
+      border-color: rgba(0, 0, 0, 0.08);
+      color: var(--black);
+    }
+
+    .picker-cell.red.used {
+      color: var(--red);
     }
 
     .eq-head-row {
@@ -629,7 +664,7 @@
   </header>
 
   <main class="main-stack">
-    <section class="section-card players-wrap">
+    <section class="section-card players-wrap player-section">
       <div class="players-two-col">
         <div class="player-col">
           <div class="section-head-row">
@@ -652,7 +687,7 @@
       </div>
 
       <div id="picker-mount-players" class="picker-mount">
-        <div id="inline-picker" class="inline-picker" aria-hidden="true">
+        <div id="inline-picker" class="inline-picker card-picker" aria-hidden="true">
           <div class="inline-picker-panel">
             <button type="button" class="picker-done" id="picker-done">✕ Done</button>
             <div class="picker-grid-rows" id="picker-grid"></div>
@@ -661,7 +696,7 @@
       </div>
     </section>
 
-    <section class="section-card" id="sec-board">
+    <section class="section-card player-section" id="sec-board">
       <div class="section-head-row">
         <button type="button" class="section-head-btn" id="head-board" data-open="board">Board</button>
         <button type="button" class="btn-add-cards" id="add-board" data-open="board">+ Add cards</button>
@@ -1447,9 +1482,10 @@
     document.addEventListener("mousedown", e => {
       if (!state.activeSection || state.simRunning) return;
       const t = e.target;
-      if (elInlinePicker.contains(t)) return;
+      if (t.closest(".card-picker")) return;
       if (t.closest(".slot")) return;
       if (t.closest("[data-open]")) return;
+      if (t.closest(".player-section")) return;
       closePicker();
     }, true);
 
