@@ -741,6 +741,7 @@
     <section class="section-card" id="sec-controls">
       <div class="controls-row">
         <button type="button" class="btn-primary" id="btn-run">Run It Out</button>
+        <button type="button" class="btn-secondary" id="btn-cancel-sim" hidden>Cancel</button>
         <button type="button" class="btn-secondary" id="btn-clear">Clear All</button>
         <label class="trials-wrap">
           Trials
@@ -757,8 +758,278 @@
 
   <footer>© 2026 Ryan Frank. All rights reserved.</footer>
 
+  <script type="text/plain" id="sim-worker-src">
+"use strict";
+const RANKS_ORDER_SIM = ["2","3","4","5","6","7","8","9","T","J","Q","K","A"];
+const SUITS_ORDER_SIM = ["s","h","d","c"];
+const CARD_INT = Object.create(null);
+const INT_RANK = new Int8Array(52);
+const INT_SUIT = new Int8Array(52);
+for (let r = 0; r < 13; r++) {
+  for (let s = 0; s < 4; s++) {
+    const i = r * 4 + s;
+    const str = RANKS_ORDER_SIM[r] + SUITS_ORDER_SIM[s];
+    CARD_INT[str] = i;
+    INT_RANK[i] = r;
+    INT_SUIT[i] = s;
+  }
+}
+const HC6 = new Int8Array([0,1,0,2,0,3,0,4,0,5,1,2,1,3,1,4,1,5,2,3,2,4,2,5,3,4,3,5,4,5]);
+const BC5 = new Int8Array([0,1,2,0,1,3,0,1,4,0,2,3,0,2,4,0,3,4,1,2,3,1,2,4,1,3,4,2,3,4]);
+const _lowPackBuf = new Uint8Array(5);
+const _evVals = new Int32Array(5);
+const _evCnt = new Uint8Array(15);
+const _evGv = new Int32Array(5);
+const _evGc = new Uint8Array(5);
+const _evKick = new Int32Array(5);
+const _evUniq = new Int32Array(8);
+function evaluate5int(c0, c1, c2, c3, c4) {
+  _evVals[0] = INT_RANK[c0] + 2;
+  _evVals[1] = INT_RANK[c1] + 2;
+  _evVals[2] = INT_RANK[c2] + 2;
+  _evVals[3] = INT_RANK[c3] + 2;
+  _evVals[4] = INT_RANK[c4] + 2;
+  let _ts;
+  if (_evVals[0] < _evVals[1]) { _ts = _evVals[0]; _evVals[0] = _evVals[1]; _evVals[1] = _ts; }
+  if (_evVals[3] < _evVals[4]) { _ts = _evVals[3]; _evVals[3] = _evVals[4]; _evVals[4] = _ts; }
+  if (_evVals[2] < _evVals[4]) { _ts = _evVals[2]; _evVals[2] = _evVals[4]; _evVals[4] = _ts; }
+  if (_evVals[2] < _evVals[3]) { _ts = _evVals[2]; _evVals[2] = _evVals[3]; _evVals[3] = _ts; }
+  if (_evVals[0] < _evVals[3]) { _ts = _evVals[0]; _evVals[0] = _evVals[3]; _evVals[3] = _ts; }
+  if (_evVals[0] < _evVals[2]) { _ts = _evVals[0]; _evVals[0] = _evVals[2]; _evVals[2] = _ts; }
+  if (_evVals[1] < _evVals[4]) { _ts = _evVals[1]; _evVals[1] = _evVals[4]; _evVals[4] = _ts; }
+  if (_evVals[1] < _evVals[3]) { _ts = _evVals[1]; _evVals[1] = _evVals[3]; _evVals[3] = _ts; }
+  if (_evVals[1] < _evVals[2]) { _ts = _evVals[1]; _evVals[1] = _evVals[2]; _evVals[2] = _ts; }
+  const v0 = _evVals[0], v1 = _evVals[1], v2 = _evVals[2], v3 = _evVals[3], v4 = _evVals[4];
+  const flush = INT_SUIT[c0] === INT_SUIT[c1] && INT_SUIT[c0] === INT_SUIT[c2] && INT_SUIT[c0] === INT_SUIT[c3] && INT_SUIT[c0] === INT_SUIT[c4];
+  _evCnt.fill(0);
+  _evCnt[v0]++; _evCnt[v1]++; _evCnt[v2]++; _evCnt[v3]++; _evCnt[v4]++;
+  let gn = 0;
+  for (let val = 14; val >= 2; val--) {
+    const c = _evCnt[val];
+    if (c) { _evGv[gn] = val; _evGc[gn] = c; gn++; }
+  }
+  if (gn > 1) {
+    for (let pass = 1; pass < gn; pass++) {
+      const tv = _evGv[pass], tc = _evGc[pass];
+      let j = pass - 1;
+      while (j >= 0 && (_evGc[j] < tc || (_evGc[j] === tc && _evGv[j] < tv))) {
+        _evGv[j + 1] = _evGv[j]; _evGc[j + 1] = _evGc[j]; j--;
+      }
+      _evGv[j + 1] = tv; _evGc[j + 1] = tc;
+    }
+  }
+  let ulen = 0;
+  for (let val = 14; val >= 2; val--) { if (_evCnt[val]) _evUniq[ulen++] = val; }
+  if (_evUniq[0] === 14) _evUniq[ulen++] = 1;
+  let straightHigh = 0;
+  for (let i = 0; i <= ulen - 5; i++) {
+    let ok = true;
+    for (let j = 1; j < 5; j++) { if (_evUniq[i + j] !== _evUniq[i] - j) { ok = false; break; } }
+    if (ok) { straightHigh = Math.max(straightHigh, _evUniq[i]); break; }
+  }
+  let category, t0 = 0, t1 = 0, t2 = 0, t3 = 0, t4 = 0;
+  if (straightHigh && flush) { category = 8; t0 = straightHigh; }
+  else if (_evGc[0] === 4) { category = 7; t0 = _evGv[0]; t1 = _evGv[1]; }
+  else if (_evGc[0] === 3 && _evGc[1] === 2) { category = 6; t0 = _evGv[0]; t1 = _evGv[1]; }
+  else if (flush) { category = 5; t0 = v0; t1 = v1; t2 = v2; t3 = v3; t4 = v4; }
+  else if (straightHigh) { category = 4; t0 = straightHigh; }
+  else if (_evGc[0] === 3) {
+    category = 3;
+    let kn = 0;
+    for (let g = 0; g < gn; g++) { if (_evGc[g] === 1) _evKick[kn++] = _evGv[g]; }
+    for (let a = 0; a < kn - 1; a++) {
+      for (let b = a + 1; b < kn; b++) {
+        if (_evKick[b] > _evKick[a]) { const tmp = _evKick[a]; _evKick[a] = _evKick[b]; _evKick[b] = tmp; }
+      }
+    }
+    t0 = _evGv[0]; t1 = kn > 0 ? _evKick[0] : 0; t2 = kn > 1 ? _evKick[1] : 0;
+  } else if (_evGc[0] === 2 && _evGc[1] === 2) {
+    category = 2;
+    const pva = _evGv[0], pvb = _evGv[1];
+    t0 = pva > pvb ? pva : pvb; t1 = pva > pvb ? pvb : pva; t2 = _evGv[2];
+  } else if (_evGc[0] === 2) {
+    category = 1;
+    let kn = 0;
+    for (let g = 0; g < gn; g++) { if (_evGc[g] === 1) _evKick[kn++] = _evGv[g]; }
+    for (let a = 0; a < kn - 1; a++) {
+      for (let b = a + 1; b < kn; b++) {
+        if (_evKick[b] > _evKick[a]) { const tmp = _evKick[a]; _evKick[a] = _evKick[b]; _evKick[b] = tmp; }
+      }
+    }
+    t0 = _evGv[0]; t1 = kn > 0 ? _evKick[0] : 0; t2 = kn > 1 ? _evKick[1] : 0; t3 = kn > 2 ? _evKick[2] : 0;
+  } else {
+    category = 0; t0 = v0; t1 = v1; t2 = v2; t3 = v3; t4 = v4;
+  }
+  return (((((category * 15 + t0) * 15 + t1) * 15 + t2) * 15 + t3) * 15 + t4) >>> 0;
+}
+function packLowFiveDesc(lv0, lv1, lv2, lv3, lv4) {
+  const a = _lowPackBuf;
+  a[0] = lv0; a[1] = lv1; a[2] = lv2; a[3] = lv3; a[4] = lv4;
+  for (let i = 1; i < 5; i++) {
+    const t = a[i];
+    let j = i;
+    while (j > 0 && a[j - 1] < t) { a[j] = a[j - 1]; j--; }
+    a[j] = t;
+  }
+  return a[0] * 100000 + a[1] * 10000 + a[2] * 1000 + a[3] * 100 + a[4];
+}
+function bestHighAndLow(hole6int, board5int) {
+  let bestHighScore = -1, bestLowPacked = 99999999, hasLow = false;
+  for (let hi = 0; hi < 30; hi += 2) {
+    const h0 = hole6int[HC6[hi]], h1 = hole6int[HC6[hi + 1]];
+    for (let bi = 0; bi < 30; bi += 3) {
+      const b0 = board5int[BC5[bi]], b1 = board5int[BC5[bi + 1]], b2 = board5int[BC5[bi + 2]];
+      const highScore = evaluate5int(h0, h1, b0, b1, b2);
+      if (highScore > bestHighScore) bestHighScore = highScore;
+      const r0 = INT_RANK[h0], r1 = INT_RANK[h1], r2 = INT_RANK[b0], r3 = INT_RANK[b1], r4 = INT_RANK[b2];
+      const lv0 = r0 === 12 ? 1 : r0 <= 6 ? r0 + 2 : 0;
+      const lv1 = r1 === 12 ? 1 : r1 <= 6 ? r1 + 2 : 0;
+      const lv2 = r2 === 12 ? 1 : r2 <= 6 ? r2 + 2 : 0;
+      const lv3 = r3 === 12 ? 1 : r3 <= 6 ? r3 + 2 : 0;
+      const lv4 = r4 === 12 ? 1 : r4 <= 6 ? r4 + 2 : 0;
+      if (lv0 && lv1 && lv2 && lv3 && lv4) {
+        const mask = (1 << lv0) | (1 << lv1) | (1 << lv2) | (1 << lv3) | (1 << lv4);
+        let bits = 0, m = mask;
+        while (m) { bits++; m &= m - 1; }
+        if (bits === 5) {
+          const lowScore = packLowFiveDesc(lv0, lv1, lv2, lv3, lv4);
+          if (lowScore < bestLowPacked) { bestLowPacked = lowScore; hasLow = true; }
+        }
+      }
+    }
+  }
+  return { bestHighScore, bestLowPacked, hasLow };
+}
+function tallyShowdownInt(p1hole6, p2hole6, board5int) {
+  const r1 = bestHighAndLow(p1hole6, board5int);
+  const r2 = bestHighAndLow(p2hole6, board5int);
+  const highCmp = r1.bestHighScore - r2.bestHighScore;
+  const highWinner = highCmp > 0 ? 1 : highCmp < 0 ? 2 : 0;
+  let lowWinner = -1;
+  if (r1.hasLow && r2.hasLow) {
+    const d = r1.bestLowPacked - r2.bestLowPacked;
+    lowWinner = d < 0 ? 1 : d > 0 ? 2 : 0;
+  } else if (r1.hasLow) lowWinner = 1;
+  else if (r2.hasLow) lowWinner = 2;
+  return { highWinner, lowWinner };
+}
+function partialShuffleInPlace(arr, len, n, swapI, swapJ) {
+  for (let i = 0; i < n; i++) {
+    const j = i + Math.floor(Math.random() * (len - i));
+    swapI[i] = i; swapJ[i] = j;
+    const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+  }
+}
+function undoPartialShuffle(arr, n, swapI, swapJ) {
+  for (let i = n - 1; i >= 0; i--) {
+    const si = swapI[i], sj = swapJ[i];
+    const tmp = arr[si]; arr[si] = arr[sj]; arr[sj] = tmp;
+  }
+}
+const RANKS_W = ["A","K","Q","J","T","9","8","7","6","5","4","3","2"];
+const SUIT_CODES_W = ["s","h","d","c"];
+function buildFullDeck() {
+  const d = [];
+  for (let ri = 0; ri < RANKS_W.length; ri++) {
+    for (let sj = 0; sj < SUIT_CODES_W.length; sj++) d.push(RANKS_W[ri] + SUIT_CODES_W[sj]);
+  }
+  return d;
+}
+self.onmessage = function(e) {
+  const { p1hole6, p2hole6, knownBoard, trials } = e.data;
+  const known = new Set();
+  for (let i = 0; i < 6; i++) { known.add(p1hole6[i]); known.add(p2hole6[i]); }
+  for (let j = 0; j < 5; j++) { if (knownBoard[j]) known.add(knownBoard[j]); }
+  const deckStrs = buildFullDeck().filter(function(c) { return !known.has(c); });
+  const deckLen = deckStrs.length;
+  const deckArr = new Int32Array(deckLen);
+  for (let di = 0; di < deckLen; di++) deckArr[di] = CARD_INT[deckStrs[di]];
+  const p1i = new Int32Array(6), p2i = new Int32Array(6);
+  for (let i = 0; i < 6; i++) {
+    p1i[i] = CARD_INT[p1hole6[i]];
+    p2i[i] = CARD_INT[p2hole6[i]];
+  }
+  const boardFixed = new Int32Array(5), boardIsKnown = new Uint8Array(5);
+  for (let j = 0; j < 5; j++) {
+    if (knownBoard[j]) {
+      boardFixed[j] = CARD_INT[knownBoard[j]];
+      boardIsKnown[j] = 1;
+    }
+  }
+  const boardWork = new Int32Array(5);
+  let boardNeed = 0;
+  for (let j = 0; j < 5; j++) if (boardIsKnown[j]) boardNeed++;
+  const need = 5 - boardNeed;
+  const swapI = new Int32Array(5), swapJ = new Int32Array(5);
+  let p1Scoop = 0, p2Scoop = 0, p1HighOnly = 0, p2HighOnly = 0;
+  let p1LowOnly = 0, p2LowOnly = 0, p1Quartered = 0, p2Quartered = 0;
+  let tieBoth = 0, tieHighNoLow = 0, done = 0;
+  const BATCH = 10000;
+  while (done < trials) {
+    const batchSize = Math.min(BATCH, trials - done);
+    for (let i = 0; i < batchSize; i++) {
+      partialShuffleInPlace(deckArr, deckLen, need, swapI, swapJ);
+      let di = 0;
+      for (let j = 0; j < 5; j++) {
+        boardWork[j] = boardIsKnown[j] ? boardFixed[j] : deckArr[di++];
+      }
+      const sh = tallyShowdownInt(p1i, p2i, boardWork);
+      const highWinner = sh.highWinner, lowWinner = sh.lowWinner;
+      undoPartialShuffle(deckArr, need, swapI, swapJ);
+      if (lowWinner === -1) {
+        if (highWinner === 1) p1Scoop++;
+        else if (highWinner === 2) p2Scoop++;
+        else { p1HighOnly += 0.5; p2HighOnly += 0.5; }
+      } else {
+        if (highWinner === 1 && lowWinner === 1) p1Scoop++;
+        else if (highWinner === 2 && lowWinner === 2) p2Scoop++;
+        else if (highWinner === 0 && lowWinner === 0) {
+          p1HighOnly += 0.5; p2HighOnly += 0.5; p1LowOnly += 0.5; p2LowOnly += 0.5;
+        } else if (highWinner === 1 && lowWinner === 2) { p1HighOnly++; p2LowOnly++; }
+        else if (highWinner === 2 && lowWinner === 1) { p2HighOnly++; p1LowOnly++; }
+        else if (highWinner === 1 && lowWinner === 0) { p1HighOnly++; p1Quartered++; p2Quartered++; }
+        else if (highWinner === 2 && lowWinner === 0) { p2HighOnly++; p1Quartered++; p2Quartered++; }
+        else if (highWinner === 0 && lowWinner === 1) { p1HighOnly += 0.5; p2HighOnly += 0.5; p1LowOnly++; }
+        else if (highWinner === 0 && lowWinner === 2) { p1HighOnly += 0.5; p2HighOnly += 0.5; p2LowOnly++; }
+      }
+      if (lowWinner === -1 && highWinner === 0) tieHighNoLow++;
+      else if (lowWinner !== -1 && highWinner === 0 && lowWinner === 0) tieBoth++;
+      done++;
+    }
+    self.postMessage({ type: "progress", done: done, trials: trials });
+  }
+  const t = done;
+  const tieBothFrac = tieBoth / t;
+  const tieHighNoLowFrac = tieHighNoLow / t;
+  const tieFrac = tieBothFrac + tieHighNoLowFrac;
+  self.postMessage({
+    type: "result",
+    p1: {
+      scoop: p1Scoop / t,
+      highOnly: p1HighOnly / t,
+      lowOnly: p1LowOnly / t,
+      quartered: p1Quartered / t,
+      lose: p2Scoop / t
+    },
+    p2: {
+      scoop: p2Scoop / t,
+      highOnly: p2HighOnly / t,
+      lowOnly: p2LowOnly / t,
+      quartered: p2Quartered / t,
+      lose: p1Scoop / t
+    },
+    tieBoth: tieBothFrac,
+    tieHighNoLow: tieHighNoLowFrac,
+    tieFrac: tieFrac,
+    trials: t
+  });
+};
+  </script>
+
   <script>
     const RANK_TO_VALUE = { A: 14, K: 13, Q: 12, J: 11, T: 10, 9: 9, 8: 8, 7: 7, 6: 6, 5: 5, 4: 4, 3: 3, 2: 2 };
+
+    const SIM_WORKER_SRC = document.getElementById("sim-worker-src").textContent.trim();
 
     const RANKS_ORDER_SIM = ["2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K", "A"];
     const SUITS_ORDER_SIM = ["s", "h", "d", "c"];
@@ -795,7 +1066,52 @@
       _evVals[2] = INT_RANK[c2] + 2;
       _evVals[3] = INT_RANK[c3] + 2;
       _evVals[4] = INT_RANK[c4] + 2;
-      _evVals.sort((a, b) => b - a);
+      let _ts;
+      if (_evVals[0] < _evVals[1]) {
+        _ts = _evVals[0];
+        _evVals[0] = _evVals[1];
+        _evVals[1] = _ts;
+      }
+      if (_evVals[3] < _evVals[4]) {
+        _ts = _evVals[3];
+        _evVals[3] = _evVals[4];
+        _evVals[4] = _ts;
+      }
+      if (_evVals[2] < _evVals[4]) {
+        _ts = _evVals[2];
+        _evVals[2] = _evVals[4];
+        _evVals[4] = _ts;
+      }
+      if (_evVals[2] < _evVals[3]) {
+        _ts = _evVals[2];
+        _evVals[2] = _evVals[3];
+        _evVals[3] = _ts;
+      }
+      if (_evVals[0] < _evVals[3]) {
+        _ts = _evVals[0];
+        _evVals[0] = _evVals[3];
+        _evVals[3] = _ts;
+      }
+      if (_evVals[0] < _evVals[2]) {
+        _ts = _evVals[0];
+        _evVals[0] = _evVals[2];
+        _evVals[2] = _ts;
+      }
+      if (_evVals[1] < _evVals[4]) {
+        _ts = _evVals[1];
+        _evVals[1] = _evVals[4];
+        _evVals[4] = _ts;
+      }
+      if (_evVals[1] < _evVals[3]) {
+        _ts = _evVals[1];
+        _evVals[1] = _evVals[3];
+        _evVals[3] = _ts;
+      }
+      if (_evVals[1] < _evVals[2]) {
+        _ts = _evVals[1];
+        _evVals[1] = _evVals[2];
+        _evVals[2] = _ts;
+      }
       const v0 = _evVals[0], v1 = _evVals[1], v2 = _evVals[2], v3 = _evVals[3], v4 = _evVals[4];
 
       const flush =
@@ -820,19 +1136,18 @@
           gn++;
         }
       }
-      for (let pass = 0; pass < gn; pass++) {
-        for (let j = 0; j + 1 < gn; j++) {
-          const swapNeeded =
-            _evGc[j] < _evGc[j + 1] ||
-            (_evGc[j] === _evGc[j + 1] && _evGv[j] < _evGv[j + 1]);
-          if (swapNeeded) {
-            let tmp = _evGv[j];
-            _evGv[j] = _evGv[j + 1];
-            _evGv[j + 1] = tmp;
-            tmp = _evGc[j];
-            _evGc[j] = _evGc[j + 1];
-            _evGc[j + 1] = tmp;
+      if (gn > 1) {
+        for (let pass = 1; pass < gn; pass++) {
+          const tv = _evGv[pass];
+          const tc = _evGc[pass];
+          let j = pass - 1;
+          while (j >= 0 && (_evGc[j] < tc || (_evGc[j] === tc && _evGv[j] < tv))) {
+            _evGv[j + 1] = _evGv[j];
+            _evGc[j + 1] = _evGc[j];
+            j--;
           }
+          _evGv[j + 1] = tv;
+          _evGc[j + 1] = tc;
         }
       }
 
@@ -1338,7 +1653,8 @@
       pickTarget: "p1",
       activeSection: null,
       simRunning: false,
-      abortSim: false
+      abortSim: false,
+      simCancelWorker: null
     };
 
     const BOARD_LABELS = ["Flop", "Flop", "Flop", "Turn", "River"];
@@ -1684,6 +2000,9 @@
     }
 
     document.getElementById("btn-clear").addEventListener("click", () => {
+      if (typeof state.simCancelWorker === "function") {
+        state.simCancelWorker();
+      }
       if (state.simRunning) {
         state.abortSim = true;
       }
@@ -1715,34 +2034,71 @@
       if (Number.isNaN(trials) || trials < 1000) trials = 10000;
       if (trials > 1000000) trials = 1000000;
 
+      const cancelBtn = document.getElementById("btn-cancel-sim");
       state.simRunning = true;
       state.abortSim = false;
       document.getElementById("btn-run").disabled = true;
+      cancelBtn.hidden = false;
       elProgress.classList.add("active");
       elProgressFill.style.width = "0%";
       elProgressMeta.textContent = "0% — 0 / " + trials.toLocaleString() + " trials";
       refreshAll();
 
       const knownBoard = state.board.map(c => c || null);
-      const res = await simulateHiLo(
-        p1,
-        p2,
-        knownBoard,
-        trials,
-        frac => {
-          const pct = (frac * 100).toFixed(1);
-          elProgressFill.style.width = pct + "%";
-          const done = Math.min(trials, Math.round(frac * trials));
-          elProgressMeta.textContent = pct + "% — " + done.toLocaleString() + " / " + trials.toLocaleString() + " trials";
-        },
-        () => !state.abortSim
-      );
+
+      const blob = new Blob([SIM_WORKER_SRC], { type: "application/javascript" });
+      const workerUrl = URL.createObjectURL(blob);
+      const worker = new Worker(workerUrl);
+
+      let workerClean = false;
+      const cleanupWorker = () => {
+        if (workerClean) return;
+        workerClean = true;
+        worker.terminate();
+        URL.revokeObjectURL(workerUrl);
+        state.simCancelWorker = null;
+        cancelBtn.hidden = true;
+      };
+
+      let res;
+      try {
+        res = await new Promise((resolve, reject) => {
+          state.simCancelWorker = () => {
+            cleanupWorker();
+            resolve(null);
+          };
+          worker.onmessage = e => {
+            if (e.data.type === "progress") {
+              const frac = e.data.trials ? e.data.done / e.data.trials : 0;
+              const pct = (frac * 100).toFixed(1);
+              elProgressFill.style.width = pct + "%";
+              const doneN = Math.min(trials, e.data.done);
+              elProgressMeta.textContent =
+                pct + "% — " + doneN.toLocaleString() + " / " + trials.toLocaleString() + " trials";
+            } else if (e.data.type === "result") {
+              cleanupWorker();
+              resolve(e.data);
+            }
+          };
+          worker.onerror = err => {
+            cleanupWorker();
+            reject(err);
+          };
+          worker.postMessage({ p1hole6: p1, p2hole6: p2, knownBoard: knownBoard, trials: trials });
+        });
+      } catch (err) {
+        cleanupWorker();
+        console.error(err);
+        res = null;
+      }
 
       state.simRunning = false;
       document.getElementById("btn-run").disabled = false;
       elProgress.classList.remove("active");
       elProgressMeta.textContent = "";
       refreshAll();
+
+      if (!res) return;
 
       const p1w = res.p1;
       const p2w = res.p2;
@@ -1777,6 +2133,10 @@
         (parts.length ? ` · ${parts.join(" · ")}` : "") +
         `<br />Approximate 95% Wilson intervals (scoop rate): P1 [${formatPct(ci1.lo)}, ${formatPct(ci1.hi)}], ` +
         `P2 [${formatPct(ci2.lo)}, ${formatPct(ci2.hi)}]`;
+    });
+
+    document.getElementById("btn-cancel-sim").addEventListener("click", () => {
+      if (typeof state.simCancelWorker === "function") state.simCancelWorker();
     });
 
     document.getElementById("picker-done").addEventListener("click", closePicker);
