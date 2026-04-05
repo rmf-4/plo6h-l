@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PLO6 Hi/Lo Hand Equity Visualizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --felt: #0d2818;
+      --felt-mid: #143d24;
+      --felt-light: #1a4d2e;
+      --text: #e8f0e8;
+      --text-dim: rgba(232, 240, 232, 0.65);
+      --slot-empty: rgba(255, 255, 255, 0.08);
+      --slot-border: rgba(255, 255, 255, 0.12);
+      --red: #c41e3a;
+      --black: #1a1a1a;
+      --scoop: #38d39f;
+      --high: #4a9eff;
+      --low: #a855f7;
+      --qtd: #ffb432;
+      --lose: rgba(255, 255, 255, 0.07);
+      --panel: rgba(0, 0, 0, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      background: radial-gradient(ellipse 120% 100% at 50% 20%, var(--felt-mid) 0%, var(--felt) 45%, #061810 100%);
+      background-attachment: fixed;
+    }
+
+    body {
+      padding: 1.25rem 1rem 3rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    header h1 {
+      font-size: clamp(1.35rem, 4vw, 1.75rem);
+      font-weight: 700;
+      margin: 0 0 0.35rem;
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      line-height: 1.45;
+    }
+
+    .players {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    @media (max-width: 720px) {
+      .players {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .player-panel {
+      background: var(--panel);
+      border-radius: 12px;
+      padding: 1rem;
+      border: 1px solid var(--slot-border);
+    }
+
+    .player-panel h2 {
+      margin: 0 0 0.75rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+
+    .card-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .slot {
+      width: 52px;
+      height: 72px;
+      border-radius: 8px;
+      border: 2px dashed var(--slot-border);
+      background: var(--slot-empty);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+      flex-shrink: 0;
+    }
+
+    .slot:hover {
+      border-color: rgba(255, 255, 255, 0.28);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .slot.selected {
+      border-color: var(--qtd);
+      box-shadow: 0 0 0 2px rgba(255, 180, 50, 0.35);
+    }
+
+    .slot .card-mini {
+      width: 100%;
+      height: 100%;
+      border-radius: 6px;
+    }
+
+    .hand-meta {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    .hand-meta strong {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .board-section {
+      background: var(--panel);
+      border-radius: 12px;
+      padding: 1rem;
+      border: 1px solid var(--slot-border);
+      margin-bottom: 1.25rem;
+    }
+
+    .board-section h2 {
+      margin: 0 0 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+
+    .board-labels {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: flex-end;
+      margin-bottom: 0.35rem;
+    }
+
+    .board-labels span {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-dim);
+      width: 52px;
+      text-align: center;
+    }
+
+    .low-board-hint {
+      font-size: 0.8rem;
+      margin-top: 0.6rem;
+      color: var(--text-dim);
+    }
+
+    .low-board-hint.possible { color: #7dcea0; }
+    .low-board-hint.wait { color: #f4d03f; }
+    .low-board-hint.impossible { color: #e74c3c; }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    button {
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 0.65rem 1.25rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: filter 0.15s, transform 0.1s;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: linear-gradient(180deg, #3daf7a, #2d8f62);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      filter: brightness(1.08);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--text);
+      border: 1px solid var(--slot-border);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    .trials-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+    }
+
+    .trials-wrap input {
+      width: 5.5rem;
+      padding: 0.45rem 0.5rem;
+      border-radius: 6px;
+      border: 1px solid var(--slot-border);
+      background: rgba(0, 0, 0, 0.35);
+      color: var(--text);
+      font-family: inherit;
+    }
+
+    .progress-wrap {
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .progress-wrap.active {
+      display: block;
+    }
+
+    .progress-bar {
+      height: 8px;
+      border-radius: 4px;
+      background: var(--slot-empty);
+      overflow: hidden;
+      border: 1px solid var(--slot-border);
+    }
+
+    .progress-bar > div {
+      height: 100%;
+      background: linear-gradient(90deg, var(--high), var(--scoop));
+      width: 0%;
+      transition: width 0.08s linear;
+    }
+
+    .equity-section h2 {
+      font-size: 1rem;
+      margin: 0 0 0.75rem;
+      color: var(--text-dim);
+    }
+
+    .bar-row {
+      margin-bottom: 0.35rem;
+    }
+
+    .bar-row .bar-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      margin-bottom: 0.25rem;
+    }
+
+    .eq-bar {
+      display: flex;
+      gap: 3px;
+      align-items: stretch;
+      height: 28px;
+    }
+
+    .eq-bar-chop {
+      border-radius: 8px;
+      border: 1px solid var(--slot-border);
+      background: rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.55rem;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .eq-bar-core {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--slot-border);
+      background: var(--lose);
+    }
+
+    .eq-bar-core .seg {
+      min-width: 2px;
+      transition: flex 0.4s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.55rem;
+      font-weight: 700;
+      color: rgba(0, 0, 0, 0.65);
+      text-shadow: none;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .eq-bar-core .seg.sc { background: var(--scoop); color: rgba(0, 0, 0, 0.55); }
+    .eq-bar-core .seg.hi { background: var(--high); color: rgba(0, 0, 0, 0.55); }
+    .eq-bar-core .seg.lo { background: var(--low); color: rgba(255, 255, 255, 0.85); }
+    .eq-bar-core .seg.qt { background: var(--qtd); color: rgba(0, 0, 0, 0.55); }
+    .eq-bar-core .seg.ls { background: var(--lose); color: transparent; }
+
+    /* P1: Scoop | High | Low | Qtd | Lose (left to right) */
+    /* P2: mirror — Lose | Qtd | Low | High | Scoop (left to right) */
+    .eq-stats {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      margin: 0.85rem 0 0;
+      line-height: 1.55;
+    }
+
+    .eq-stats strong { color: var(--text); }
+
+    .result-meta {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      margin-top: 0.75rem;
+      padding: 0.65rem 0.75rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      border: 1px solid var(--slot-border);
+    }
+
+    footer {
+      margin-top: 2.5rem;
+      text-align: center;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+    }
+
+    /* Picker overlay */
+    .picker-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      z-index: 100;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 1rem;
+      padding-bottom: env(safe-area-inset-bottom, 1rem);
+    }
+
+    .picker-backdrop.open {
+      display: flex;
+    }
+
+    .picker-panel {
+      background: linear-gradient(180deg, #1e3d2a, #0d2818);
+      border: 1px solid var(--slot-border);
+      border-radius: 16px 16px 0 0;
+      max-width: 420px;
+      width: 100%;
+      max-height: 72vh;
+      overflow: auto;
+      padding: 1rem;
+      box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .picker-panel h3 {
+      margin: 0 0 0.75rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .picker-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.4rem;
+    }
+
+    .picker-cell {
+      aspect-ratio: 0.72;
+      border-radius: 8px;
+      border: 1px solid var(--slot-border);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      background: #fff;
+      color: var(--black);
+      transition: transform 0.1s, opacity 0.15s;
+    }
+
+    .picker-cell.red {
+      color: var(--red);
+    }
+
+    .picker-cell:hover:not(.used) {
+      transform: scale(1.03);
+    }
+
+    .picker-cell.used {
+      opacity: 0.28;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .picker-close {
+      margin-top: 0.75rem;
+      width: 100%;
+      padding: 0.6rem;
+      font-size: 0.85rem;
+    }
+
+    .card-face {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      padding: 4px 5px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card-face .rank {
+      font-size: 0.95rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .card-face .suit-br {
+      align-self: flex-end;
+      font-size: 1rem;
+      line-height: 1;
+      margin-top: auto;
+    }
+
+    .card-face.hearts, .card-face.diamonds {
+      color: var(--red);
+    }
+
+    .card-face.spades, .card-face.clubs {
+      color: var(--black);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PLO6 Hi/Lo Hand Equity Visualizer</h1>
+    <p>6-card Omaha Hi/Lo (8-or-better) · Must use exactly 2 hole cards + 3 board cards</p>
+  </header>
+
+  <div class="players">
+    <div class="player-panel" data-player="0">
+      <h2>Player 1</h2>
+      <div class="card-row holes" id="p1-slots"></div>
+      <div class="hand-meta" id="p1-meta">High: <strong>—</strong><br />Low: <strong>—</strong></div>
+    </div>
+    <div class="player-panel" data-player="1">
+      <h2>Player 2</h2>
+      <div class="card-row holes" id="p2-slots"></div>
+      <div class="hand-meta" id="p2-meta">High: <strong>—</strong><br />Low: <strong>—</strong></div>
+    </div>
+  </div>
+
+  <div class="board-section">
+    <h2>Board</h2>
+    <div class="board-labels" id="board-labels"></div>
+    <div class="card-row board-row" id="board-slots"></div>
+    <div class="low-board-hint" id="low-hint">Low cards on board: —</div>
+  </div>
+
+  <div class="controls">
+    <button type="button" class="btn-primary" id="btn-run">Run It Out</button>
+    <button type="button" class="btn-secondary" id="btn-clear">Clear All</button>
+    <label class="trials-wrap">
+      Trials
+      <input type="number" id="trials" min="1000" max="250000" step="1000" value="10000" />
+    </label>
+  </div>
+
+  <div class="progress-wrap" id="progress-wrap">
+    <div class="progress-bar"><div id="progress-fill"></div></div>
+  </div>
+
+  <div class="equity-section">
+    <h2>Equity</h2>
+    <div class="bar-row">
+      <div class="bar-label">P1</div>
+      <div class="eq-bar" id="bar-p1"></div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">P2</div>
+      <div class="eq-bar" id="bar-p2"></div>
+    </div>
+    <p class="eq-stats" id="eq-text-p1"></p>
+    <p class="eq-stats" id="eq-text-p2"></p>
+    <div class="result-meta" id="result-meta" style="display: none;"></div>
+  </div>
+
+  <footer>© 2026 Ryan Frank. All rights reserved.</footer>
+
+  <div class="picker-backdrop" id="picker-backdrop" aria-hidden="true">
+    <div class="picker-panel">
+      <h3 id="picker-title">Select card</h3>
+      <div class="picker-grid" id="picker-grid"></div>
+      <button type="button" class="btn-secondary picker-close" id="picker-close">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    const RANK_TO_VALUE = { A: 14, K: 13, Q: 12, J: 11, T: 10, 9: 9, 8: 8, 7: 7, 6: 6, 5: 5, 4: 4, 3: 3, 2: 2 };
+
+    function evaluate5(cards) {
+      const vals = cards.map(c => RANK_TO_VALUE[c[0]]).sort((a, b) => b - a);
+      const suits = cards.map(c => c[1]);
+      const counts = new Map();
+      for (const v of vals) counts.set(v, (counts.get(v) || 0) + 1);
+      const groups = [...counts.entries()].sort((a, b) => b[1] - a[1] || b[0] - a[0]);
+      let uniq = [...new Set(vals)].sort((a, b) => b - a);
+      if (uniq[0] === 14) uniq.push(1);
+      let straightHigh = 0;
+      for (let i = 0; i <= uniq.length - 5; i++) {
+        let ok = true;
+        for (let j = 1; j < 5; j++) if (uniq[i + j] !== uniq[i] - j) { ok = false; break; }
+        if (ok) { straightHigh = Math.max(straightHigh, uniq[i]); break; }
+      }
+      const flush = suits.every(s => s === suits[0]);
+      let category, tiebreak, label;
+      if (straightHigh && flush) { category = 8; tiebreak = [straightHigh]; label = straightHigh === 14 ? "Royal Flush" : "Straight Flush"; }
+      else if (groups[0][1] === 4) { category = 7; tiebreak = [groups[0][0], groups[1][0]]; label = "Four of a Kind"; }
+      else if (groups[0][1] === 3 && groups[1][1] === 2) { category = 6; tiebreak = [groups[0][0], groups[1][0]]; label = "Full House"; }
+      else if (flush) { category = 5; tiebreak = vals.slice(); label = "Flush"; }
+      else if (straightHigh) { category = 4; tiebreak = [straightHigh]; label = "Straight"; }
+      else if (groups[0][1] === 3) { const kick = groups.filter(g => g[1] === 1).map(g => g[0]).sort((a, b) => b - a); category = 3; tiebreak = [groups[0][0], ...kick]; label = "Trips"; }
+      else if (groups[0][1] === 2 && groups[1][1] === 2) { const pv = [groups[0][0], groups[1][0]].sort((a, b) => b - a); const k = groups.find(g => g[1] === 1)[0]; category = 2; tiebreak = [...pv, k]; label = "Two Pair"; }
+      else if (groups[0][1] === 2) { const kick = groups.filter(g => g[1] === 1).map(g => g[0]).sort((a, b) => b - a); category = 1; tiebreak = [groups[0][0], ...kick]; label = "One Pair"; }
+      else { category = 0; tiebreak = vals.slice(); label = "High Card"; }
+      return { category, tiebreak, label };
+    }
+
+    function cmpEval(a, b) {
+      if (a.category !== b.category) return a.category - b.category;
+      const len = Math.max(a.tiebreak.length, b.tiebreak.length);
+      for (let i = 0; i < len; i++) {
+        const av = a.tiebreak[i] || 0, bv = b.tiebreak[i] || 0;
+        if (av !== bv) return av - bv;
+      }
+      return 0;
+    }
+
+    function choose(arr, k) {
+      if (k === 0) return [[]];
+      if (arr.length === 0) return [];
+      const [first, ...rest] = arr;
+      const withFirst = choose(rest, k - 1).map(c => [first, ...c]);
+      const withoutFirst = choose(rest, k);
+      return [...withFirst, ...withoutFirst];
+    }
+
+    const holeCombos6 = choose([0, 1, 2, 3, 4, 5], 2);
+    const boardCombos5 = choose([0, 1, 2, 3, 4], 3);
+
+    function bestOmaha6HighHand(hole6, board5) {
+      let best = null;
+      for (const hc of holeCombos6) {
+        for (const bc of boardCombos5) {
+          const five = [hole6[hc[0]], hole6[hc[1]], board5[bc[0]], board5[bc[1]], board5[bc[2]]];
+          const ev = evaluate5(five);
+          if (!best || cmpEval(ev, best) > 0) best = ev;
+        }
+      }
+      return best;
+    }
+
+    function cmpLow(a, b) {
+      for (let i = 4; i >= 0; i--) {
+        if (a[i] !== b[i]) return a[i] - b[i];
+      }
+      return 0;
+    }
+
+    function lowLabel(vals) {
+      const display = vals.map(v => v === 1 ? "A" : v.toString());
+      const isNut = vals[0] === 1 && vals[1] === 2 && vals[2] === 3 && vals[3] === 4 && vals[4] === 5;
+      return display.join("-") + (isNut ? " (Nut Low)" : "");
+    }
+
+    function bestOmaha6LowHand(hole6, board5) {
+      const LOW_VAL = { A: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8 };
+      let best = null;
+
+      for (const hc of holeCombos6) {
+        for (const bc of boardCombos5) {
+          const five = [hole6[hc[0]], hole6[hc[1]], board5[bc[0]], board5[bc[1]], board5[bc[2]]];
+          const lowVals = five.map(c => LOW_VAL[c[0]]);
+          if (lowVals.some(v => v === undefined)) continue;
+          if (new Set(lowVals).size !== 5) continue;
+          const sorted = [...lowVals].sort((a, b) => a - b);
+          if (!best || cmpLow(sorted, best.vals) < 0) {
+            best = { vals: sorted, label: lowLabel(sorted) };
+          }
+        }
+      }
+      return best;
+    }
+
+    function boardLowCards(board) {
+      const LOW_RANKS = new Set(["A", "2", "3", "4", "5", "6", "7", "8"]);
+      return board.filter(c => c && LOW_RANKS.has(c[0])).length;
+    }
+
+    const RANKS = ["A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"];
+    const SUITS = [
+      { code: "s", sym: "\u2660", cls: "spades" },
+      { code: "h", sym: "\u2665", cls: "hearts" },
+      { code: "d", sym: "\u2666", cls: "diamonds" },
+      { code: "c", sym: "\u2663", cls: "clubs" }
+    ];
+
+    function buildFullDeck() {
+      const d = [];
+      for (const r of RANKS) for (const s of SUITS) d.push(r + s.code);
+      return d;
+    }
+
+    function shuffle(a) {
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+    }
+
+    function tallyShowdown(p1hole6, p2hole6, board) {
+      const h1 = bestOmaha6HighHand(p1hole6, board);
+      const h2 = bestOmaha6HighHand(p2hole6, board);
+      const l1 = bestOmaha6LowHand(p1hole6, board);
+      const l2 = bestOmaha6LowHand(p2hole6, board);
+      const highCmp = cmpEval(h1, h2);
+      let highWinner = highCmp > 0 ? 1 : highCmp < 0 ? 2 : 0;
+      let lowWinner = -1;
+      if (l1 && l2) {
+        const lc = cmpLow(l1.vals, l2.vals);
+        lowWinner = lc < 0 ? 1 : lc > 0 ? 2 : 0;
+      } else if (l1) lowWinner = 1;
+      else if (l2) lowWinner = 2;
+      return { highWinner, lowWinner };
+    }
+
+    /**
+     * One trial → mutually exclusive buckets per player (sum to trials when ties excluded).
+     * tieHighNoLow: tied high, no qualifying low → entire pot chopped (tracked separately).
+     * tieBoth: tied high and tied low → pot chopped (tracked separately).
+     */
+    function applyTrialOutcome(tallies, highWinner, lowWinner) {
+      const p1 = tallies.p1;
+      const p2 = tallies.p2;
+
+      if (lowWinner === -1 && highWinner === 0) {
+        tallies.tieHighNoLow++;
+        return;
+      }
+      if (lowWinner === -1) {
+        if (highWinner === 1) { p1.scoop++; p2.lose++; }
+        else { p2.scoop++; p1.lose++; }
+        return;
+      }
+
+      if (highWinner === 0 && lowWinner === 0) {
+        tallies.tieBoth++;
+        return;
+      }
+
+      if (highWinner === 1 && lowWinner === 1) { p1.scoop++; p2.lose++; return; }
+      if (highWinner === 2 && lowWinner === 2) { p2.scoop++; p1.lose++; return; }
+
+      if (lowWinner === 0) {
+        if (highWinner === 1) { p1.quartered++; p2.lose++; return; }
+        if (highWinner === 2) { p2.quartered++; p1.lose++; return; }
+      }
+
+      if (highWinner === 1 && lowWinner === 2) { p1.highOnly++; p2.lowOnly++; return; }
+      if (highWinner === 2 && lowWinner === 1) { p2.highOnly++; p1.lowOnly++; return; }
+
+      if (highWinner === 0 && lowWinner === 1) { p1.lowOnly++; p2.lose++; return; }
+      if (highWinner === 0 && lowWinner === 2) { p2.lowOnly++; p1.lose++; return; }
+    }
+
+    async function simulateHiLo(p1hole6, p2hole6, knownBoard, trials, onProgress, shouldContinue) {
+      const known = new Set([...p1hole6, ...p2hole6, ...knownBoard.filter(Boolean)]);
+      const fullDeck = buildFullDeck().filter(c => !known.has(c));
+
+      const tallies = {
+        p1: { scoop: 0, highOnly: 0, lowOnly: 0, quartered: 0, lose: 0 },
+        p2: { scoop: 0, highOnly: 0, lowOnly: 0, quartered: 0, lose: 0 },
+        tieBoth: 0,
+        tieHighNoLow: 0
+      };
+      let done = 0;
+
+      const BATCH = 500;
+
+      while (done < trials) {
+        if (shouldContinue && !shouldContinue()) break;
+        const batchSize = Math.min(BATCH, trials - done);
+
+        for (let i = 0; i < batchSize; i++) {
+          const deck = [...fullDeck];
+          shuffle(deck);
+          const board = [...knownBoard];
+          let di = 0;
+          for (let j = 0; j < 5; j++) {
+            if (!board[j]) board[j] = deck[di++];
+          }
+
+          const { highWinner, lowWinner } = tallyShowdown(p1hole6, p2hole6, board);
+          applyTrialOutcome(tallies, highWinner, lowWinner);
+          done++;
+        }
+
+        if (onProgress) onProgress(done / trials);
+        await new Promise(r => setTimeout(r, 0));
+      }
+
+      const t = done;
+      const tieBothFrac = tallies.tieBoth / t;
+      const tieHighNoLowFrac = tallies.tieHighNoLow / t;
+      const tieFrac = tieBothFrac + tieHighNoLowFrac;
+
+      function finalize(side) {
+        const s = tallies[side];
+        const den = t;
+        return {
+          scoop: s.scoop / den,
+          highOnly: s.highOnly / den,
+          lowOnly: s.lowOnly / den,
+          quartered: s.quartered / den,
+          lose: s.lose / den
+        };
+      }
+
+      return {
+        p1: finalize("p1"),
+        p2: finalize("p2"),
+        tieBoth: tieBothFrac,
+        tieHighNoLow: tieHighNoLowFrac,
+        tieFrac,
+        trials: t
+      };
+    }
+
+    function renderCardFace(cardStr) {
+      const rank = cardStr[0];
+      const suitCode = cardStr[1];
+      const s = SUITS.find(x => x.code === suitCode);
+      const div = document.createElement("div");
+      div.className = "card-face " + (s ? s.cls : "");
+      const r = document.createElement("div");
+      r.className = "rank";
+      r.textContent = rank;
+      const br = document.createElement("div");
+      br.className = "suit-br";
+      br.textContent = s ? s.sym : "";
+      div.appendChild(r);
+      div.appendChild(br);
+      return div;
+    }
+
+    const state = {
+      p1: Array(6).fill(null),
+      p2: Array(6).fill(null),
+      board: Array(5).fill(null),
+      selected: null,
+      simRunning: false,
+      abortSim: false
+    };
+
+    const elP1 = document.getElementById("p1-slots");
+    const elP2 = document.getElementById("p2-slots");
+    const elBoard = document.getElementById("board-slots");
+    const elLowHint = document.getElementById("low-hint");
+    const elPicker = document.getElementById("picker-backdrop");
+    const elPickerGrid = document.getElementById("picker-grid");
+    const elProgress = document.getElementById("progress-wrap");
+    const elProgressFill = document.getElementById("progress-fill");
+    const elBarP1 = document.getElementById("bar-p1");
+    const elBarP2 = document.getElementById("bar-p2");
+    const elEqP1 = document.getElementById("eq-text-p1");
+    const elEqP2 = document.getElementById("eq-text-p2");
+    const elResultMeta = document.getElementById("result-meta");
+
+    function usedSet() {
+      const u = new Set();
+      for (const c of state.p1) if (c) u.add(c);
+      for (const c of state.p2) if (c) u.add(c);
+      for (const c of state.board) if (c) u.add(c);
+      return u;
+    }
+
+    function currentShowdownMeta() {
+      const p1 = state.p1.filter(Boolean);
+      const p2 = state.p2.filter(Boolean);
+      const b = state.board.map(c => c || null);
+      if (p1.length !== 6 || p2.length !== 6 || b.some(x => !x)) {
+        return { p1h: null, p2h: null, p1l: null, p2l: null };
+      }
+      return {
+        p1h: bestOmaha6HighHand(p1, b),
+        p2h: bestOmaha6HighHand(p2, b),
+        p1l: bestOmaha6LowHand(p1, b),
+        p2l: bestOmaha6LowHand(p2, b)
+      };
+    }
+
+    function lowImpossibleReason() {
+      const nLow = boardLowCards(state.board);
+      const filled = state.board.filter(Boolean).length;
+      if (filled < 5 && nLow < 3) {
+        const need = 3 - nLow;
+        const spots = 5 - filled;
+        if (spots < need) return { cls: "impossible", text: `Low impossible (need 3+ low ranks; only ${spots} card(s) left)` };
+        return { cls: "wait", text: `Low not yet possible (${nLow}/5 low ranks; need 3 for any low)` };
+      }
+      if (nLow < 3) return { cls: "impossible", text: `Low impossible (${nLow}/5 low ranks on board; need 3+)` };
+      return { cls: "possible", text: `Low possible (${nLow}/5 low ranks on board)` };
+    }
+
+    function updateHandLabels() {
+      const meta = currentShowdownMeta();
+      const hint = lowImpossibleReason();
+      elLowHint.className = "low-board-hint " + hint.cls;
+      elLowHint.textContent = "Low cards on board: " + hint.text;
+
+      const fmtHigh = ev => ev ? `${ev.label}` : "—";
+      const fmtLow = lo => {
+        if (!lo) {
+          if (hint.cls === "impossible") return "No qualifier (impossible)";
+          if (hint.cls === "wait" && state.board.filter(Boolean).length < 5) return "No qualifier (board incomplete)";
+          return "No qualifier";
+        }
+        return lo.label;
+      };
+
+      if (state.p1.filter(Boolean).length === 6) {
+        document.querySelector("#p1-meta").innerHTML =
+          `High: <strong>${fmtHigh(meta.p1h)}</strong><br />Low: <strong>${fmtLow(meta.p1l)}</strong>`;
+      } else {
+        document.querySelector("#p1-meta").innerHTML = `High: <strong>—</strong><br />Low: <strong>—</strong>`;
+      }
+      if (state.p2.filter(Boolean).length === 6) {
+        document.querySelector("#p2-meta").innerHTML =
+          `High: <strong>${fmtHigh(meta.p2h)}</strong><br />Low: <strong>${fmtLow(meta.p2l)}</strong>`;
+      } else {
+        document.querySelector("#p2-meta").innerHTML = `High: <strong>—</strong><br />Low: <strong>—</strong>`;
+      }
+    }
+
+    function makeSlot(ref, index) {
+      const slot = document.createElement("div");
+      slot.className = "slot";
+      slot.dataset.ref = ref;
+      slot.dataset.index = String(index);
+      const c = ref === "p1" ? state.p1[index] : ref === "p2" ? state.p2[index] : state.board[index];
+      if (c) {
+        const wrap = document.createElement("div");
+        wrap.className = "card-mini";
+        wrap.appendChild(renderCardFace(c));
+        slot.appendChild(wrap);
+      }
+      slot.addEventListener("click", () => {
+        if (state.simRunning) return;
+        if (c) {
+          if (ref === "p1") state.p1[index] = null;
+          else if (ref === "p2") state.p2[index] = null;
+          else state.board[index] = null;
+          state.selected = null;
+          refreshSlots();
+          return;
+        }
+        document.querySelectorAll(".slot.selected").forEach(s => s.classList.remove("selected"));
+        state.selected = { ref, index };
+        slot.classList.add("selected");
+        openPicker();
+      });
+      return slot;
+    }
+
+    function refreshSlots() {
+      elP1.innerHTML = "";
+      elP2.innerHTML = "";
+      elBoard.innerHTML = "";
+      for (let i = 0; i < 6; i++) elP1.appendChild(makeSlot("p1", i));
+      for (let i = 0; i < 6; i++) elP2.appendChild(makeSlot("p2", i));
+      for (let i = 0; i < 5; i++) elBoard.appendChild(makeSlot("board", i));
+      updateHandLabels();
+    }
+
+    function initBoardLabels() {
+      const lab = document.getElementById("board-labels");
+      lab.innerHTML = "";
+      ["Flop", "Flop", "Flop", "Turn", "River"].forEach(t => {
+        const s = document.createElement("span");
+        s.textContent = t;
+        lab.appendChild(s);
+      });
+    }
+
+    function openPicker() {
+      const used = usedSet();
+      elPickerGrid.innerHTML = "";
+      const frag = document.createDocumentFragment();
+      for (const r of RANKS) {
+        for (const s of SUITS) {
+          const card = r + s.code;
+          const cell = document.createElement("button");
+          cell.type = "button";
+          cell.className = "picker-cell " + (s.cls === "hearts" || s.cls === "diamonds" ? "red" : "");
+          cell.innerHTML = `<span style="font-size:1.1rem">${r}</span><span style="font-size:0.85rem">${s.sym}</span>`;
+          if (used.has(card)) cell.classList.add("used");
+          cell.addEventListener("click", () => {
+            if (used.has(card)) return;
+            if (!state.selected) return;
+            const { ref, index } = state.selected;
+            if (ref === "p1") state.p1[index] = card;
+            else if (ref === "p2") state.p2[index] = card;
+            else state.board[index] = card;
+            state.selected = null;
+            elPicker.classList.remove("open");
+            refreshSlots();
+          });
+          frag.appendChild(cell);
+        }
+      }
+      elPickerGrid.appendChild(frag);
+      elPicker.classList.add("open");
+      elPicker.setAttribute("aria-hidden", "false");
+    }
+
+    function closePicker() {
+      elPicker.classList.remove("open");
+      elPicker.setAttribute("aria-hidden", "true");
+      document.querySelectorAll(".slot.selected").forEach(s => s.classList.remove("selected"));
+      state.selected = null;
+    }
+
+    document.getElementById("picker-close").addEventListener("click", closePicker);
+    elPicker.addEventListener("click", e => { if (e.target === elPicker) closePicker(); });
+
+    function wilsonCI(p, n, z = 1.96) {
+      if (n === 0) return { lo: 0, hi: 0 };
+      const phat = p;
+      const denom = 1 + z * z / n;
+      const center = (phat + z * z / (2 * n)) / denom;
+      const margin = (z * Math.sqrt((phat * (1 - phat) + z * z / (4 * n)) / n)) / denom;
+      return { lo: Math.max(0, center - margin), hi: Math.min(1, center + margin) };
+    }
+
+    function formatPct(x) {
+      return (x * 100).toFixed(1) + "%";
+    }
+
+    function setBar(el, parts, mirror, tieFrac = 0) {
+      el.innerHTML = "";
+      const chopEl = () => {
+        if (tieFrac <= 0.0005) return null;
+        const chop = document.createElement("div");
+        chop.className = "eq-bar-chop";
+        chop.style.flex = String(tieFrac * 10000);
+        chop.style.minWidth = tieFrac > 0.06 ? "36px" : "4px";
+        if (tieFrac >= 0.07) chop.textContent = "CHOP";
+        chop.title = "Tie — split pot (no low / both sides tied)";
+        return chop;
+      };
+
+      const core = document.createElement("div");
+      core.className = "eq-bar-core";
+      const order = mirror
+        ? ["lose", "quartered", "lowOnly", "highOnly", "scoop"]
+        : ["scoop", "highOnly", "lowOnly", "quartered", "lose"];
+      const labels = { scoop: "SCOOP", highOnly: "HIGH", lowOnly: "LOW", quartered: "QTD", lose: "" };
+      const cls = { scoop: "sc", highOnly: "hi", lowOnly: "lo", quartered: "qt", lose: "ls" };
+      let sum = 0;
+      for (const key of order) sum += parts[key] || 0;
+      if (sum > 1e-12) {
+        for (const key of order) {
+          const v = parts[key];
+          if (v <= 0) continue;
+          const seg = document.createElement("div");
+          seg.className = "seg " + cls[key];
+          seg.style.flex = String(Math.max(v, 1e-6) * 1000);
+          seg.textContent = v >= 0.08 && key !== "lose" ? labels[key] : "";
+          core.appendChild(seg);
+        }
+      } else if (tieFrac < 1 - 1e-12) {
+        const seg = document.createElement("div");
+        seg.className = "seg ls";
+        seg.style.flex = "1000";
+        core.appendChild(seg);
+      }
+
+      const c1 = chopEl();
+      if (!mirror) {
+        if (c1) el.appendChild(c1);
+        el.appendChild(core);
+      } else {
+        el.appendChild(core);
+        if (c1) el.appendChild(c1);
+      }
+    }
+
+    document.getElementById("btn-clear").addEventListener("click", () => {
+      if (state.simRunning) {
+        state.abortSim = true;
+      }
+      state.p1 = Array(6).fill(null);
+      state.p2 = Array(6).fill(null);
+      state.board = Array(5).fill(null);
+      elResultMeta.style.display = "none";
+      elProgress.classList.remove("active");
+      refreshSlots();
+      const empty = { scoop: 0, highOnly: 0, lowOnly: 0, quartered: 0, lose: 1 };
+      setBar(elBarP1, empty, false, 0);
+      setBar(elBarP2, empty, true, 0);
+      elEqP1.textContent = "";
+      elEqP2.textContent = "";
+    });
+
+    document.getElementById("btn-run").addEventListener("click", async () => {
+      const p1 = state.p1.filter(Boolean);
+      const p2 = state.p2.filter(Boolean);
+      if (p1.length !== 6 || p2.length !== 6) {
+        alert("Both players need exactly 6 hole cards.");
+        return;
+      }
+      let trials = parseInt(document.getElementById("trials").value, 10);
+      if (Number.isNaN(trials) || trials < 1000) trials = 10000;
+
+      state.simRunning = true;
+      state.abortSim = false;
+      document.getElementById("btn-run").disabled = true;
+      elProgress.classList.add("active");
+      elProgressFill.style.width = "0%";
+
+      const knownBoard = state.board.map(c => c || null);
+      const res = await simulateHiLo(
+        p1,
+        p2,
+        knownBoard,
+        trials,
+        frac => { elProgressFill.style.width = (frac * 100).toFixed(1) + "%"; },
+        () => !state.abortSim
+      );
+
+      state.simRunning = false;
+      document.getElementById("btn-run").disabled = false;
+      elProgress.classList.remove("active");
+
+      const p1w = res.p1;
+      const p2w = res.p2;
+
+      const tieF = res.tieFrac || 0;
+      setBar(elBarP1, p1w, false, tieF);
+      setBar(elBarP2, p2w, true, tieF);
+
+      elEqP1.innerHTML =
+        "<strong>Player 1</strong> — Scoop: " + formatPct(p1w.scoop) +
+        " · High only: " + formatPct(p1w.highOnly) +
+        " · Low only: " + formatPct(p1w.lowOnly) +
+        " · Qtd: " + formatPct(p1w.quartered) +
+        " · Lose: " + formatPct(p1w.lose);
+
+      elEqP2.innerHTML =
+        "<strong>Player 2</strong> — Scoop: " + formatPct(p2w.scoop) +
+        " · High only: " + formatPct(p2w.highOnly) +
+        " · Low only: " + formatPct(p2w.lowOnly) +
+        " · Qtd: " + formatPct(p2w.quartered) +
+        " · Lose: " + formatPct(p2w.lose);
+
+      const n = res.trials;
+      const ci1 = wilsonCI(p1w.scoop, n);
+      const ci2 = wilsonCI(p2w.scoop, n);
+      elResultMeta.style.display = "block";
+      const parts = [];
+      if (res.tieBoth > 0) parts.push(`Tie both sides: ${formatPct(res.tieBoth)}`);
+      if (res.tieHighNoLow > 0) parts.push(`Tie high (no low): ${formatPct(res.tieHighNoLow)}`);
+      elResultMeta.innerHTML =
+        `${n.toLocaleString()} trials` +
+        (parts.length ? ` · ${parts.join(" · ")}` : "") +
+        `<br />Approximate 95% Wilson intervals (scoop rate): P1 [${formatPct(ci1.lo)}, ${formatPct(ci1.hi)}], ` +
+        `P2 [${formatPct(ci2.lo)}, ${formatPct(ci2.hi)}]`;
+    });
+
+    initBoardLabels();
+    refreshSlots();
+    const empty = { scoop: 0, highOnly: 0, lowOnly: 0, quartered: 0, lose: 1 };
+    setBar(elBarP1, empty, false, 0);
+    setBar(elBarP2, empty, true, 0);
+  </script>
+</body>
+</html>
