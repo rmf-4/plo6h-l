@@ -22,8 +22,13 @@
       --high: #4a9eff;
       --low: #a855f7;
       --qtd: #ffb432;
-      --lose: rgba(255, 255, 255, 0.07);
-      --panel: rgba(0, 0, 0, 0.25);
+      --lose-bar: rgba(255, 255, 255, 0.1);
+      --panel: rgba(0, 0, 0, 0.2);
+    }
+
+    @keyframes slotPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(56, 211, 159, 0.4); }
+      50% { box-shadow: 0 0 0 6px rgba(56, 211, 159, 0); }
     }
 
     * {
@@ -40,14 +45,14 @@
     }
 
     body {
-      padding: 1.25rem 1rem 3rem;
-      max-width: 1100px;
+      padding: 16px 16px 32px;
+      max-width: 720px;
       margin: 0 auto;
     }
 
     header {
       text-align: center;
-      margin-bottom: 1.5rem;
+      margin-bottom: 16px;
     }
 
     header h1 {
@@ -64,28 +69,21 @@
       line-height: 1.45;
     }
 
-    .players {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-      margin-bottom: 1.25rem;
+    .main-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
 
-    @media (max-width: 720px) {
-      .players {
-        grid-template-columns: 1fr;
-      }
+    .section-card {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 14px;
     }
 
-    .player-panel {
-      background: var(--panel);
-      border-radius: 12px;
-      padding: 1rem;
-      border: 1px solid var(--slot-border);
-    }
-
-    .player-panel h2 {
-      margin: 0 0 0.75rem;
+    .section-title {
+      margin: 0 0 12px;
       font-size: 1rem;
       font-weight: 600;
       color: var(--text-dim);
@@ -94,15 +92,15 @@
     .card-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 0.75rem;
+      gap: 10px;
+      margin-bottom: 12px;
     }
 
     .slot {
-      width: 52px;
-      height: 72px;
+      width: 62px;
+      height: 88px;
       border-radius: 8px;
-      border: 2px dashed var(--slot-border);
+      border: 2px dashed rgba(255, 255, 255, 0.2);
       background: var(--slot-empty);
       cursor: pointer;
       display: flex;
@@ -110,16 +108,30 @@
       justify-content: center;
       transition: border-color 0.15s, background 0.15s, transform 0.1s;
       flex-shrink: 0;
+      position: relative;
     }
 
-    .slot:hover {
-      border-color: rgba(255, 255, 255, 0.28);
+    .slot:hover:not(.slot-next):not(.sim-lock) {
+      border-color: rgba(255, 255, 255, 0.35);
       background: rgba(255, 255, 255, 0.06);
     }
 
-    .slot.selected {
-      border-color: var(--qtd);
-      box-shadow: 0 0 0 2px rgba(255, 180, 50, 0.35);
+    .slot.slot-next {
+      border: 2px solid #38d39f;
+      animation: slotPulse 2s ease-in-out infinite;
+    }
+
+    .slot.sim-lock {
+      cursor: default;
+      opacity: 0.85;
+    }
+
+    .slot-placeholder {
+      font-size: 1.5rem;
+      font-weight: 300;
+      color: rgba(232, 240, 232, 0.35);
+      line-height: 1;
+      user-select: none;
     }
 
     .slot .card-mini {
@@ -128,72 +140,145 @@
       border-radius: 6px;
     }
 
-    .hand-meta {
-      font-size: 0.75rem;
-      color: var(--text-dim);
-      line-height: 1.5;
+    .hand-badges {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: flex-start;
     }
 
-    .hand-meta strong {
-      color: var(--text);
-      font-weight: 500;
-    }
-
-    .board-section {
-      background: var(--panel);
-      border-radius: 12px;
-      padding: 1rem;
-      border: 1px solid var(--slot-border);
-      margin-bottom: 1.25rem;
-    }
-
-    .board-section h2 {
-      margin: 0 0 0.5rem;
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text-dim);
-    }
-
-    .board-labels {
+    .badge-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.5rem;
-      align-items: flex-end;
-      margin-bottom: 0.35rem;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
     }
 
-    .board-labels span {
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
+    .badge {
+      padding: 3px 10px;
+      border-radius: 20px;
+      max-width: 100%;
+      word-break: break-word;
+    }
+
+    .badge-high {
+      background: rgba(74, 158, 255, 0.28);
+      border: 1px solid rgba(74, 158, 255, 0.55);
+      color: #cfe6ff;
+    }
+
+    .badge-low {
+      background: rgba(168, 85, 247, 0.28);
+      border: 1px solid rgba(168, 85, 247, 0.5);
+      color: #ecd4ff;
+    }
+
+    .badge-low-muted {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       color: var(--text-dim);
-      width: 52px;
+    }
+
+    .badge-low-warn {
+      background: rgba(244, 208, 79, 0.18);
+      border: 1px solid rgba(244, 208, 79, 0.45);
+      color: #f4e6a8;
+    }
+
+    .board-columns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .board-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      width: 62px;
+    }
+
+    .board-col-label {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-dim);
       text-align: center;
     }
 
+    .board-low-pill {
+      font-size: 0.62rem;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 10px;
+      background: rgba(168, 85, 247, 0.35);
+      border: 1px solid rgba(168, 85, 247, 0.6);
+      color: #f0e0ff;
+      white-space: nowrap;
+    }
+
+    .slot.is-board-low .card-mini { position: relative; }
+
+    .slot.is-board-low .card-mini::after {
+      content: "";
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #a855f7;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+      pointer-events: none;
+    }
+
     .low-board-hint {
-      font-size: 0.8rem;
-      margin-top: 0.6rem;
+      font-size: 0.84rem;
+      margin: 0;
+      font-weight: 600;
+      line-height: 1.45;
+    }
+
+    .low-board-hint.low-sum-imp { color: #ff6b6b; }
+    .low-board-hint.low-sum-warn { color: #ffc048; }
+    .low-board-hint.low-sum-ok { color: #52d4a3; }
+
+    .controls-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .controls-row .trials-wrap {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
       color: var(--text-dim);
     }
 
-    .low-board-hint.possible { color: #7dcea0; }
-    .low-board-hint.wait { color: #f4d03f; }
-    .low-board-hint.impossible { color: #e74c3c; }
-
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      align-items: center;
-      margin-bottom: 1rem;
+    .controls-row .trials-wrap input {
+      width: 5.5rem;
+      padding: 0.45rem 0.5rem;
+      border-radius: 6px;
+      border: 1px solid var(--slot-border);
+      background: rgba(0, 0, 0, 0.35);
+      color: var(--text);
+      font-family: inherit;
+      text-align: right;
     }
 
     button {
       font-family: inherit;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       font-weight: 600;
-      padding: 0.65rem 1.25rem;
+      padding: 0.75rem 1.4rem;
       border-radius: 8px;
       border: none;
       cursor: pointer;
@@ -219,35 +304,17 @@
     }
 
     .btn-secondary {
-      background: rgba(255, 255, 255, 0.12);
+      background: rgba(0, 0, 0, 0.35);
       color: var(--text);
-      border: 1px solid var(--slot-border);
+      border: 1px solid rgba(255, 255, 255, 0.12);
     }
 
     .btn-secondary:hover:not(:disabled) {
-      background: rgba(255, 255, 255, 0.18);
-    }
-
-    .trials-wrap {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.85rem;
-      color: var(--text-dim);
-    }
-
-    .trials-wrap input {
-      width: 5.5rem;
-      padding: 0.45rem 0.5rem;
-      border-radius: 6px;
-      border: 1px solid var(--slot-border);
-      background: rgba(0, 0, 0, 0.35);
-      color: var(--text);
-      font-family: inherit;
+      background: rgba(255, 255, 255, 0.1);
     }
 
     .progress-wrap {
-      margin-bottom: 1rem;
+      margin-top: 14px;
       display: none;
     }
 
@@ -256,8 +323,8 @@
     }
 
     .progress-bar {
-      height: 8px;
-      border-radius: 4px;
+      height: 10px;
+      border-radius: 5px;
       background: var(--slot-empty);
       overflow: hidden;
       border: 1px solid var(--slot-border);
@@ -267,81 +334,92 @@
       height: 100%;
       background: linear-gradient(90deg, var(--high), var(--scoop));
       width: 0%;
-      transition: width 0.08s linear;
+      transition: width 0.12s linear;
     }
 
-    .equity-section h2 {
-      font-size: 1rem;
-      margin: 0 0 0.75rem;
+    .progress-meta {
+      margin-top: 8px;
+      font-size: 0.78rem;
       color: var(--text-dim);
+      font-variant-numeric: tabular-nums;
     }
 
     .bar-row {
-      margin-bottom: 0.35rem;
+      margin-bottom: 10px;
     }
 
     .bar-row .bar-label {
       font-size: 0.75rem;
       font-weight: 600;
       color: var(--text-dim);
-      margin-bottom: 0.25rem;
+      margin-bottom: 6px;
     }
 
     .eq-bar {
       display: flex;
-      gap: 3px;
-      align-items: stretch;
+      flex-direction: row;
+      width: 100%;
       height: 28px;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: var(--lose-bar);
     }
 
-    .eq-bar-chop {
-      border-radius: 8px;
-      border: 1px solid var(--slot-border);
-      background: rgba(255, 255, 255, 0.12);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.55rem;
-      font-weight: 700;
-      color: rgba(255, 255, 255, 0.4);
-    }
-
-    .eq-bar-core {
-      flex: 1;
+    .eq-bar .seg {
       min-width: 0;
-      display: flex;
-      border-radius: 8px;
-      overflow: hidden;
-      border: 1px solid var(--slot-border);
-      background: var(--lose);
-    }
-
-    .eq-bar-core .seg {
-      min-width: 2px;
-      transition: flex 0.4s ease;
+      height: 100%;
+      flex: 0 0 auto;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.55rem;
-      font-weight: 700;
-      color: rgba(0, 0, 0, 0.65);
-      text-shadow: none;
       overflow: hidden;
+      box-sizing: border-box;
+      transition: flex 0.6s ease, flex-basis 0.6s ease;
+    }
+
+    .eq-bar .seg-lbl {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+      padding: 0 4px;
       white-space: nowrap;
     }
 
-    .eq-bar-core .seg.sc { background: var(--scoop); color: rgba(0, 0, 0, 0.55); }
-    .eq-bar-core .seg.hi { background: var(--high); color: rgba(0, 0, 0, 0.55); }
-    .eq-bar-core .seg.lo { background: var(--low); color: rgba(255, 255, 255, 0.85); }
-    .eq-bar-core .seg.qt { background: var(--qtd); color: rgba(0, 0, 0, 0.55); }
-    .eq-bar-core .seg.ls { background: var(--lose); color: transparent; }
+    .eq-bar .seg.sc { background: #38d39f; }
+    .eq-bar .seg.hi { background: #4a9eff; }
+    .eq-bar .seg.lo { background: #a855f7; }
+    .eq-bar .seg.qt { background: #ffb432; }
+    .eq-bar .seg.ls { background: var(--lose-bar); }
+    .eq-bar .seg.ch { background: rgba(255, 255, 255, 0.18); }
 
-    /* P1: Scoop | High | Low | Qtd | Lose (left to right) */
-    /* P2: mirror — Lose | Qtd | Low | High | Scoop (left to right) */
+    .eq-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px 20px;
+      margin-top: 12px;
+      font-size: 0.76rem;
+      color: var(--text-dim);
+    }
+
+    .eq-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .eq-legend i {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
     .eq-stats {
       font-size: 0.72rem;
       color: var(--text-dim);
-      margin: 0.85rem 0 0;
+      margin: 12px 0 0;
       line-height: 1.55;
     }
 
@@ -350,96 +428,120 @@
     .result-meta {
       font-size: 0.78rem;
       color: var(--text-dim);
-      margin-top: 0.75rem;
-      padding: 0.65rem 0.75rem;
+      margin-top: 12px;
+      padding: 10px 12px;
       background: rgba(0, 0, 0, 0.2);
       border-radius: 8px;
       border: 1px solid var(--slot-border);
     }
 
-    footer {
-      margin-top: 2.5rem;
-      text-align: center;
-      font-size: 0.7rem;
-      color: var(--text-dim);
-    }
-
-    /* Picker overlay */
-    .picker-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.55);
-      z-index: 100;
-      display: none;
-      align-items: flex-end;
-      justify-content: center;
-      padding: 1rem;
-      padding-bottom: env(safe-area-inset-bottom, 1rem);
-    }
-
-    .picker-backdrop.open {
-      display: flex;
-    }
-
-    .picker-panel {
-      background: linear-gradient(180deg, #1e3d2a, #0d2818);
-      border: 1px solid var(--slot-border);
-      border-radius: 16px 16px 0 0;
-      max-width: 420px;
-      width: 100%;
-      max-height: 72vh;
-      overflow: auto;
-      padding: 1rem;
-      box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
-    }
-
-    .picker-panel h3 {
-      margin: 0 0 0.75rem;
-      font-size: 0.9rem;
+    .picker-section .picker-heading {
+      font-size: 0.85rem;
       font-weight: 600;
+      color: var(--text-dim);
+      margin-bottom: 10px;
     }
 
-    .picker-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 0.4rem;
+    .pick-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .pick-pill {
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(0, 0, 0, 0.25);
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .pick-pill:hover {
+      color: var(--text);
+      border-color: rgba(255, 255, 255, 0.28);
+    }
+
+    .pick-pill.active {
+      border-color: #38d39f;
+      background: rgba(56, 211, 159, 0.18);
+      color: #b8f5dc;
+    }
+
+    .picker-grid-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .picker-suit-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+    }
+
+    .picker-suit-label {
+      width: 28px;
+      font-size: 1.1rem;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .picker-suit-label.spades, .picker-suit-label.clubs { color: #e8f0e8; }
+    .picker-suit-label.hearts, .picker-suit-label.diamonds { color: var(--red); }
+
+    .picker-suit-cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      flex: 1;
+      min-width: 0;
     }
 
     .picker-cell {
-      aspect-ratio: 0.72;
-      border-radius: 8px;
-      border: 1px solid var(--slot-border);
+      width: 44px;
+      height: 56px;
+      border-radius: 6px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
       cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 0.95rem;
       background: #fff;
       color: var(--black);
       transition: transform 0.1s, opacity 0.15s;
+      padding: 0;
+      font-family: inherit;
     }
 
-    .picker-cell.red {
-      color: var(--red);
-    }
+    .picker-cell .pc-rank { font-size: 0.95rem; line-height: 1; }
+    .picker-cell .pc-suit { font-size: 0.65rem; line-height: 1; margin-top: 2px; }
+
+    .picker-cell.red { color: var(--red); }
 
     .picker-cell:hover:not(.used) {
-      transform: scale(1.03);
+      transform: scale(1.04);
     }
 
     .picker-cell.used {
-      opacity: 0.28;
-      cursor: not-allowed;
+      opacity: 0.25;
       pointer-events: none;
+      cursor: not-allowed;
     }
 
-    .picker-close {
-      margin-top: 0.75rem;
-      width: 100%;
-      padding: 0.6rem;
-      font-size: 0.85rem;
+    footer {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--text-dim);
     }
 
     .card-face {
@@ -450,21 +552,21 @@
       border-radius: 6px;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
       border: 1px solid rgba(0, 0, 0, 0.06);
-      padding: 4px 5px;
+      padding: 6px 7px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
     }
 
     .card-face .rank {
-      font-size: 0.95rem;
+      font-size: 1.1rem;
       font-weight: 700;
       line-height: 1;
     }
 
     .card-face .suit-br {
       align-self: flex-end;
-      font-size: 1rem;
+      font-size: 1.15rem;
       line-height: 1;
       margin-top: auto;
     }
@@ -484,63 +586,70 @@
     <p>6-card Omaha Hi/Lo (8-or-better) · Must use exactly 2 hole cards + 3 board cards</p>
   </header>
 
-  <div class="players">
-    <div class="player-panel" data-player="0">
-      <h2>Player 1</h2>
+  <main class="main-stack">
+    <section class="section-card" id="sec-p1">
+      <h2 class="section-title">Player 1</h2>
       <div class="card-row holes" id="p1-slots"></div>
-      <div class="hand-meta" id="p1-meta">High: <strong>—</strong><br />Low: <strong>—</strong></div>
-    </div>
-    <div class="player-panel" data-player="1">
-      <h2>Player 2</h2>
+      <div class="hand-badges" id="p1-meta"></div>
+    </section>
+
+    <section class="section-card" id="sec-board">
+      <h2 class="section-title">Board</h2>
+      <div class="board-columns" id="board-columns"></div>
+      <p class="low-board-hint" id="low-hint"></p>
+    </section>
+
+    <section class="section-card" id="sec-p2">
+      <h2 class="section-title">Player 2</h2>
       <div class="card-row holes" id="p2-slots"></div>
-      <div class="hand-meta" id="p2-meta">High: <strong>—</strong><br />Low: <strong>—</strong></div>
-    </div>
-  </div>
+      <div class="hand-badges" id="p2-meta"></div>
+    </section>
 
-  <div class="board-section">
-    <h2>Board</h2>
-    <div class="board-labels" id="board-labels"></div>
-    <div class="card-row board-row" id="board-slots"></div>
-    <div class="low-board-hint" id="low-hint">Low cards on board: —</div>
-  </div>
+    <section class="section-card" id="sec-equity">
+      <h2 class="section-title">Equity</h2>
+      <div class="bar-row">
+        <div class="bar-label">P1</div>
+        <div class="eq-bar" id="bar-p1"></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">P2</div>
+        <div class="eq-bar" id="bar-p2"></div>
+      </div>
+      <div class="eq-legend" aria-hidden="true">
+        <span><i style="background:#38d39f"></i> Scoop</span>
+        <span><i style="background:#4a9eff"></i> High only</span>
+        <span><i style="background:#a855f7"></i> Low only</span>
+        <span><i style="background:#ffb432"></i> Quartered</span>
+        <span><i style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15)"></i> Lose</span>
+      </div>
+      <p class="eq-stats" id="eq-text-p1"></p>
+      <p class="eq-stats" id="eq-text-p2"></p>
+      <div class="result-meta" id="result-meta" style="display: none;"></div>
+    </section>
 
-  <div class="controls">
-    <button type="button" class="btn-primary" id="btn-run">Run It Out</button>
-    <button type="button" class="btn-secondary" id="btn-clear">Clear All</button>
-    <label class="trials-wrap">
-      Trials
-      <input type="number" id="trials" min="1000" max="250000" step="1000" value="10000" />
-    </label>
-  </div>
+    <section class="section-card" id="sec-controls">
+      <div class="controls-row">
+        <button type="button" class="btn-primary" id="btn-run">Run It Out</button>
+        <button type="button" class="btn-secondary" id="btn-clear">Clear All</button>
+        <label class="trials-wrap">
+          Trials
+          <input type="number" id="trials" min="1000" max="250000" step="1000" value="10000" />
+        </label>
+      </div>
+      <div class="progress-wrap" id="progress-wrap">
+        <div class="progress-bar"><div id="progress-fill"></div></div>
+        <div class="progress-meta" id="progress-meta"></div>
+      </div>
+    </section>
 
-  <div class="progress-wrap" id="progress-wrap">
-    <div class="progress-bar"><div id="progress-fill"></div></div>
-  </div>
-
-  <div class="equity-section">
-    <h2>Equity</h2>
-    <div class="bar-row">
-      <div class="bar-label">P1</div>
-      <div class="eq-bar" id="bar-p1"></div>
-    </div>
-    <div class="bar-row">
-      <div class="bar-label">P2</div>
-      <div class="eq-bar" id="bar-p2"></div>
-    </div>
-    <p class="eq-stats" id="eq-text-p1"></p>
-    <p class="eq-stats" id="eq-text-p2"></p>
-    <div class="result-meta" id="result-meta" style="display: none;"></div>
-  </div>
+    <section class="section-card picker-section" id="sec-picker">
+      <div class="picker-heading">Pick cards for</div>
+      <div class="pick-pills" id="pick-pills"></div>
+      <div class="picker-grid-rows" id="picker-grid"></div>
+    </section>
+  </main>
 
   <footer>© 2026 Ryan Frank. All rights reserved.</footer>
-
-  <div class="picker-backdrop" id="picker-backdrop" aria-hidden="true">
-    <div class="picker-panel">
-      <h3 id="picker-title">Select card</h3>
-      <div class="picker-grid" id="picker-grid"></div>
-      <button type="button" class="btn-secondary picker-close" id="picker-close">Cancel</button>
-    </div>
-  </div>
 
   <script>
     const RANK_TO_VALUE = { A: 14, K: 13, Q: 12, J: 11, T: 10, 9: 9, 8: 8, 7: 7, 6: 6, 5: 5, 4: 4, 3: 3, 2: 2 };
@@ -804,24 +913,158 @@
       p1: Array(6).fill(null),
       p2: Array(6).fill(null),
       board: Array(5).fill(null),
-      selected: null,
+      pickTarget: "p1",
       simRunning: false,
       abortSim: false
     };
 
+    const LOW_RANK_SET = new Set(["A", "2", "3", "4", "5", "6", "7", "8"]);
+    const BOARD_LABELS = ["Flop", "Flop", "Flop", "Turn", "River"];
+    const PICK_ORDER = ["p1", "board", "p2"];
+
     const elP1 = document.getElementById("p1-slots");
     const elP2 = document.getElementById("p2-slots");
-    const elBoard = document.getElementById("board-slots");
+    const elBoard = document.getElementById("board-columns");
     const elLowHint = document.getElementById("low-hint");
-    const elPicker = document.getElementById("picker-backdrop");
-    const elPickerGrid = document.getElementById("picker-grid");
     const elProgress = document.getElementById("progress-wrap");
     const elProgressFill = document.getElementById("progress-fill");
+    const elProgressMeta = document.getElementById("progress-meta");
     const elBarP1 = document.getElementById("bar-p1");
     const elBarP2 = document.getElementById("bar-p2");
     const elEqP1 = document.getElementById("eq-text-p1");
     const elEqP2 = document.getElementById("eq-text-p2");
     const elResultMeta = document.getElementById("result-meta");
+    const elPickPills = document.getElementById("pick-pills");
+
+    function isLowRankCard(c) {
+      return !!(c && LOW_RANK_SET.has(c[0]));
+    }
+
+    function getCard(ref, index) {
+      if (ref === "p1") return state.p1[index];
+      if (ref === "p2") return state.p2[index];
+      return state.board[index];
+    }
+
+    function setCard(ref, index, card) {
+      if (ref === "p1") state.p1[index] = card;
+      else if (ref === "p2") state.p2[index] = card;
+      else state.board[index] = card;
+    }
+
+    function firstEmptyIndex(arr) {
+      const i = arr.findIndex(x => !x);
+      return i === -1 ? null : i;
+    }
+
+    function advancePickTarget() {
+      let i = PICK_ORDER.indexOf(state.pickTarget);
+      for (let step = 0; step < 3; step++) {
+        i = (i + 1) % 3;
+        const r = PICK_ORDER[i];
+        const arr = r === "p1" ? state.p1 : r === "p2" ? state.p2 : state.board;
+        if (firstEmptyIndex(arr) !== null) {
+          state.pickTarget = r;
+          return;
+        }
+      }
+    }
+
+    function placeNextCard(card) {
+      if (state.simRunning) return;
+      if (usedSet().has(card)) return;
+      for (let guard = 0; guard < 6; guard++) {
+        const r = state.pickTarget;
+        const arr = r === "p1" ? state.p1 : r === "p2" ? state.p2 : state.board;
+        const idx = firstEmptyIndex(arr);
+        if (idx !== null) {
+          setCard(r, idx, card);
+          if (firstEmptyIndex(arr) === null) advancePickTarget();
+          refreshAll();
+          return;
+        }
+        advancePickTarget();
+      }
+    }
+
+    function updatePillActive() {
+      document.querySelectorAll(".pick-pill").forEach(b => {
+        b.classList.toggle("active", b.dataset.target === state.pickTarget);
+      });
+    }
+
+    function initPickPills() {
+      elPickPills.innerHTML = "";
+      [
+        { id: "p1", label: "Player 1" },
+        { id: "board", label: "Board" },
+        { id: "p2", label: "Player 2" }
+      ].forEach(p => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "pick-pill";
+        b.textContent = p.label;
+        b.dataset.target = p.id;
+        b.addEventListener("click", () => {
+          state.pickTarget = p.id;
+          updatePillActive();
+          markNextSlot();
+        });
+        elPickPills.appendChild(b);
+      });
+      updatePillActive();
+    }
+
+    function buildPickerGrid() {
+      const root = document.getElementById("picker-grid");
+      root.innerHTML = "";
+      SUITS.forEach(suit => {
+        const row = document.createElement("div");
+        row.className = "picker-suit-row";
+        const lab = document.createElement("div");
+        lab.className = "picker-suit-label " + suit.cls;
+        lab.textContent = suit.sym;
+        row.appendChild(lab);
+        const cards = document.createElement("div");
+        cards.className = "picker-suit-cards";
+        RANKS.forEach(r => {
+          const cardStr = r + suit.code;
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "picker-cell" + (suit.cls === "hearts" || suit.cls === "diamonds" ? " red" : "");
+          btn.innerHTML = "<span class=\"pc-rank\">" + r + "</span><span class=\"pc-suit\">" + suit.sym + "</span>";
+          btn.dataset.card = cardStr;
+          btn.addEventListener("click", () => placeNextCard(cardStr));
+          cards.appendChild(btn);
+        });
+        row.appendChild(cards);
+        root.appendChild(row);
+      });
+    }
+
+    function refreshPickerUsed() {
+      const used = usedSet();
+      document.querySelectorAll(".picker-cell").forEach(btn => {
+        btn.classList.toggle("used", used.has(btn.dataset.card));
+      });
+    }
+
+    function markNextSlot() {
+      document.querySelectorAll(".slot").forEach(s => s.classList.remove("slot-next"));
+      if (state.simRunning) return;
+      const r = state.pickTarget;
+      const arr = r === "p1" ? state.p1 : r === "p2" ? state.p2 : state.board;
+      const idx = firstEmptyIndex(arr);
+      if (idx === null) return;
+      const sel = document.querySelector(".slot[data-ref=\"" + r + "\"][data-index=\"" + idx + "\"]");
+      if (sel) sel.classList.add("slot-next");
+    }
+
+    function refreshAll() {
+      refreshSlots();
+      refreshPickerUsed();
+      updatePillActive();
+    }
 
     function usedSet() {
       const u = new Set();
@@ -846,47 +1089,68 @@
       };
     }
 
-    function lowImpossibleReason() {
+    function boardLowSummary() {
+      const nLow = boardLowCards(state.board);
+      if (nLow <= 2) {
+        return { cls: "low-sum-imp", text: "✗ Low impossible (need 3+ low-ranked cards on board)" };
+      }
+      if (nLow === 3) {
+        return { cls: "low-sum-warn", text: "⚠ Low possible — exactly 3 low cards" };
+      }
+      return { cls: "low-sum-ok", text: "✓ Low likely — 4+ low cards on board" };
+    }
+
+    function lowLabelContextForPlayer() {
       const nLow = boardLowCards(state.board);
       const filled = state.board.filter(Boolean).length;
-      if (filled < 5 && nLow < 3) {
-        const need = 3 - nLow;
-        const spots = 5 - filled;
-        if (spots < need) return { cls: "impossible", text: `Low impossible (need 3+ low ranks; only ${spots} card(s) left)` };
-        return { cls: "wait", text: `Low not yet possible (${nLow}/5 low ranks; need 3 for any low)` };
-      }
-      if (nLow < 3) return { cls: "impossible", text: `Low impossible (${nLow}/5 low ranks on board; need 3+)` };
-      return { cls: "possible", text: `Low possible (${nLow}/5 low ranks on board)` };
+      if (filled < 5) return "incomplete";
+      if (nLow <= 2) return "impossible";
+      return "ok";
     }
 
     function updateHandLabels() {
       const meta = currentShowdownMeta();
-      const hint = lowImpossibleReason();
-      elLowHint.className = "low-board-hint " + hint.cls;
-      elLowHint.textContent = "Low cards on board: " + hint.text;
+      const summary = boardLowSummary();
+      elLowHint.className = "low-board-hint " + summary.cls;
+      elLowHint.textContent = summary.text;
 
-      const fmtHigh = ev => ev ? `${ev.label}` : "—";
-      const fmtLow = lo => {
-        if (!lo) {
-          if (hint.cls === "impossible") return "No qualifier (impossible)";
-          if (hint.cls === "wait" && state.board.filter(Boolean).length < 5) return "No qualifier (board incomplete)";
-          return "No qualifier";
+      const ctx = lowLabelContextForPlayer();
+      const p1Meta = document.getElementById("p1-meta");
+      const p2Meta = document.getElementById("p2-meta");
+
+      function playerBadges(pNum) {
+        const hKey = pNum === 1 ? "p1h" : "p2h";
+        const lKey = pNum === 1 ? "p1l" : "p2l";
+        const has6 = (pNum === 1 ? state.p1 : state.p2).filter(Boolean).length === 6;
+        if (!has6) {
+          return "<div class=\"badge-row\"><span class=\"badge badge-high\">High: —</span></div>"
+            + "<div class=\"badge-row\"><span class=\"badge badge-low-muted\">Low: —</span></div>";
         }
-        return lo.label;
-      };
+        const hi = meta[hKey];
+        const lo = meta[lKey];
+        const highText = hi ? hi.label : "—";
+        let lowClass = "badge-low";
+        let lowText;
+        if (lo) {
+          lowText = lo.label;
+        } else if (ctx === "incomplete") {
+          lowClass = "badge-low-warn";
+          lowText = "Board incomplete";
+        } else if (ctx === "impossible") {
+          lowClass = "badge-low-muted";
+          lowText = "No qualifier";
+        } else {
+          lowClass = "badge-low-muted";
+          lowText = "No qualifier";
+        }
+        return "<div class=\"badge-row\"><span class=\"label-dim\" style=\"color:var(--text-dim);margin-right:4px\">High:</span>"
+          + "<span class=\"badge badge-high\">" + highText + "</span></div>"
+          + "<div class=\"badge-row\"><span class=\"label-dim\" style=\"color:var(--text-dim);margin-right:4px\">Low:</span>"
+          + "<span class=\"badge " + lowClass + "\">" + lowText + "</span></div>";
+      }
 
-      if (state.p1.filter(Boolean).length === 6) {
-        document.querySelector("#p1-meta").innerHTML =
-          `High: <strong>${fmtHigh(meta.p1h)}</strong><br />Low: <strong>${fmtLow(meta.p1l)}</strong>`;
-      } else {
-        document.querySelector("#p1-meta").innerHTML = `High: <strong>—</strong><br />Low: <strong>—</strong>`;
-      }
-      if (state.p2.filter(Boolean).length === 6) {
-        document.querySelector("#p2-meta").innerHTML =
-          `High: <strong>${fmtHigh(meta.p2h)}</strong><br />Low: <strong>${fmtLow(meta.p2l)}</strong>`;
-      } else {
-        document.querySelector("#p2-meta").innerHTML = `High: <strong>—</strong><br />Low: <strong>—</strong>`;
-      }
+      p1Meta.innerHTML = playerBadges(1);
+      p2Meta.innerHTML = playerBadges(2);
     }
 
     function makeSlot(ref, index) {
@@ -894,27 +1158,30 @@
       slot.className = "slot";
       slot.dataset.ref = ref;
       slot.dataset.index = String(index);
-      const c = ref === "p1" ? state.p1[index] : ref === "p2" ? state.p2[index] : state.board[index];
+      const c = getCard(ref, index);
       if (c) {
+        if (ref === "board" && isLowRankCard(c)) slot.classList.add("is-board-low");
         const wrap = document.createElement("div");
         wrap.className = "card-mini";
         wrap.appendChild(renderCardFace(c));
         slot.appendChild(wrap);
+      } else {
+        const ph = document.createElement("span");
+        ph.className = "slot-placeholder";
+        ph.textContent = "+";
+        slot.appendChild(ph);
       }
       slot.addEventListener("click", () => {
         if (state.simRunning) return;
-        if (c) {
-          if (ref === "p1") state.p1[index] = null;
-          else if (ref === "p2") state.p2[index] = null;
-          else state.board[index] = null;
-          state.selected = null;
-          refreshSlots();
+        const cur = getCard(ref, index);
+        if (cur) {
+          setCard(ref, index, null);
+          refreshAll();
           return;
         }
-        document.querySelectorAll(".slot.selected").forEach(s => s.classList.remove("selected"));
-        state.selected = { ref, index };
-        slot.classList.add("selected");
-        openPicker();
+        state.pickTarget = ref;
+        updatePillActive();
+        markNextSlot();
       });
       return slot;
     }
@@ -924,61 +1191,36 @@
       elP2.innerHTML = "";
       elBoard.innerHTML = "";
       for (let i = 0; i < 6; i++) elP1.appendChild(makeSlot("p1", i));
-      for (let i = 0; i < 6; i++) elP2.appendChild(makeSlot("p2", i));
-      for (let i = 0; i < 5; i++) elBoard.appendChild(makeSlot("board", i));
-      updateHandLabels();
-    }
-
-    function initBoardLabels() {
-      const lab = document.getElementById("board-labels");
-      lab.innerHTML = "";
-      ["Flop", "Flop", "Flop", "Turn", "River"].forEach(t => {
-        const s = document.createElement("span");
-        s.textContent = t;
-        lab.appendChild(s);
-      });
-    }
-
-    function openPicker() {
-      const used = usedSet();
-      elPickerGrid.innerHTML = "";
-      const frag = document.createDocumentFragment();
-      for (const r of RANKS) {
-        for (const s of SUITS) {
-          const card = r + s.code;
-          const cell = document.createElement("button");
-          cell.type = "button";
-          cell.className = "picker-cell " + (s.cls === "hearts" || s.cls === "diamonds" ? "red" : "");
-          cell.innerHTML = `<span style="font-size:1.1rem">${r}</span><span style="font-size:0.85rem">${s.sym}</span>`;
-          if (used.has(card)) cell.classList.add("used");
-          cell.addEventListener("click", () => {
-            if (used.has(card)) return;
-            if (!state.selected) return;
-            const { ref, index } = state.selected;
-            if (ref === "p1") state.p1[index] = card;
-            else if (ref === "p2") state.p2[index] = card;
-            else state.board[index] = card;
-            state.selected = null;
-            elPicker.classList.remove("open");
-            refreshSlots();
-          });
-          frag.appendChild(cell);
+      const nLowBoard = boardLowCards(state.board);
+      for (let i = 0; i < 5; i++) {
+        const col = document.createElement("div");
+        col.className = "board-col";
+        const lab = document.createElement("div");
+        lab.className = "board-col-label";
+        lab.textContent = BOARD_LABELS[i];
+        col.appendChild(lab);
+        col.appendChild(makeSlot("board", i));
+        const bc = state.board[i];
+        if (bc && isLowRankCard(bc)) {
+          const pill = document.createElement("div");
+          pill.className = "board-low-pill";
+          pill.textContent = nLowBoard + "/5 low cards";
+          col.appendChild(pill);
+        } else {
+          const hold = document.createElement("div");
+          hold.style.height = "24px";
+          hold.setAttribute("aria-hidden", "true");
+          col.appendChild(hold);
         }
+        elBoard.appendChild(col);
       }
-      elPickerGrid.appendChild(frag);
-      elPicker.classList.add("open");
-      elPicker.setAttribute("aria-hidden", "false");
+      for (let i = 0; i < 6; i++) elP2.appendChild(makeSlot("p2", i));
+      updateHandLabels();
+      if (state.simRunning) {
+        document.querySelectorAll(".slot").forEach(s => s.classList.add("sim-lock"));
+      }
+      markNextSlot();
     }
-
-    function closePicker() {
-      elPicker.classList.remove("open");
-      elPicker.setAttribute("aria-hidden", "true");
-      document.querySelectorAll(".slot.selected").forEach(s => s.classList.remove("selected"));
-      state.selected = null;
-    }
-
-    document.getElementById("picker-close").addEventListener("click", closePicker);
-    elPicker.addEventListener("click", e => { if (e.target === elPicker) closePicker(); });
 
     function wilsonCI(p, n, z = 1.96) {
       if (n === 0) return { lo: 0, hi: 0 };
@@ -995,50 +1237,46 @@
 
     function setBar(el, parts, mirror, tieFrac = 0) {
       el.innerHTML = "";
-      const chopEl = () => {
-        if (tieFrac <= 0.0005) return null;
-        const chop = document.createElement("div");
-        chop.className = "eq-bar-chop";
-        chop.style.flex = String(tieFrac * 10000);
-        chop.style.minWidth = tieFrac > 0.06 ? "36px" : "4px";
-        if (tieFrac >= 0.07) chop.textContent = "CHOP";
-        chop.title = "Tie — split pot (no low / both sides tied)";
-        return chop;
-      };
-
-      const core = document.createElement("div");
-      core.className = "eq-bar-core";
-      const order = mirror
-        ? ["lose", "quartered", "lowOnly", "highOnly", "scoop"]
-        : ["scoop", "highOnly", "lowOnly", "quartered", "lose"];
-      const labels = { scoop: "SCOOP", highOnly: "HIGH", lowOnly: "LOW", quartered: "QTD", lose: "" };
+      const orderFwd = ["scoop", "highOnly", "lowOnly", "quartered", "lose"];
+      const orderRev = ["lose", "quartered", "lowOnly", "highOnly", "scoop"];
       const cls = { scoop: "sc", highOnly: "hi", lowOnly: "lo", quartered: "qt", lose: "ls" };
-      let sum = 0;
-      for (const key of order) sum += parts[key] || 0;
-      if (sum > 1e-12) {
-        for (const key of order) {
-          const v = parts[key];
-          if (v <= 0) continue;
-          const seg = document.createElement("div");
-          seg.className = "seg " + cls[key];
-          seg.style.flex = String(Math.max(v, 1e-6) * 1000);
-          seg.textContent = v >= 0.08 && key !== "lose" ? labels[key] : "";
-          core.appendChild(seg);
-        }
-      } else if (tieFrac < 1 - 1e-12) {
-        const seg = document.createElement("div");
-        seg.className = "seg ls";
-        seg.style.flex = "1000";
-        core.appendChild(seg);
+      const segs = [];
+
+      if (!mirror && tieFrac > 0.005) {
+        segs.push({ w: tieFrac * 100, c: "ch", p: tieFrac });
+      }
+      const ord = mirror ? orderRev : orderFwd;
+      for (const k of ord) {
+        const v = parts[k] || 0;
+        if (v * 100 > 0.5) segs.push({ w: v * 100, c: cls[k], p: v });
+      }
+      if (mirror && tieFrac > 0.005) {
+        segs.push({ w: tieFrac * 100, c: "ch", p: tieFrac });
       }
 
-      const c1 = chopEl();
-      if (!mirror) {
-        if (c1) el.appendChild(c1);
-        el.appendChild(core);
-      } else {
-        el.appendChild(core);
-        if (c1) el.appendChild(c1);
+      if (segs.length === 0) {
+        const div = document.createElement("div");
+        div.className = "seg ls";
+        div.style.flex = "1 1 100%";
+        el.appendChild(div);
+        return;
+      }
+
+      let sumW = 0;
+      for (const s of segs) sumW += s.w;
+      const scale = sumW > 0 ? 100 / sumW : 1;
+
+      for (const s of segs) {
+        const div = document.createElement("div");
+        div.className = "seg " + s.c;
+        div.style.flex = "0 0 " + (s.w * scale) + "%";
+        if (s.p > 0.08) {
+          const span = document.createElement("span");
+          span.className = "seg-lbl";
+          span.textContent = formatPct(s.p);
+          div.appendChild(span);
+        }
+        el.appendChild(div);
       }
     }
 
@@ -1049,14 +1287,16 @@
       state.p1 = Array(6).fill(null);
       state.p2 = Array(6).fill(null);
       state.board = Array(5).fill(null);
+      state.pickTarget = "p1";
       elResultMeta.style.display = "none";
       elProgress.classList.remove("active");
-      refreshSlots();
+      elProgressMeta.textContent = "";
       const empty = { scoop: 0, highOnly: 0, lowOnly: 0, quartered: 0, lose: 1 };
       setBar(elBarP1, empty, false, 0);
       setBar(elBarP2, empty, true, 0);
       elEqP1.textContent = "";
       elEqP2.textContent = "";
+      refreshAll();
     });
 
     document.getElementById("btn-run").addEventListener("click", async () => {
@@ -1074,6 +1314,8 @@
       document.getElementById("btn-run").disabled = true;
       elProgress.classList.add("active");
       elProgressFill.style.width = "0%";
+      elProgressMeta.textContent = "0% — 0 / " + trials.toLocaleString() + " trials";
+      refreshAll();
 
       const knownBoard = state.board.map(c => c || null);
       const res = await simulateHiLo(
@@ -1081,13 +1323,20 @@
         p2,
         knownBoard,
         trials,
-        frac => { elProgressFill.style.width = (frac * 100).toFixed(1) + "%"; },
+        frac => {
+          const pct = (frac * 100).toFixed(1);
+          elProgressFill.style.width = pct + "%";
+          const done = Math.min(trials, Math.round(frac * trials));
+          elProgressMeta.textContent = pct + "% — " + done.toLocaleString() + " / " + trials.toLocaleString() + " trials";
+        },
         () => !state.abortSim
       );
 
       state.simRunning = false;
       document.getElementById("btn-run").disabled = false;
       elProgress.classList.remove("active");
+      elProgressMeta.textContent = "";
+      refreshAll();
 
       const p1w = res.p1;
       const p2w = res.p2;
@@ -1124,11 +1373,12 @@
         `P2 [${formatPct(ci2.lo)}, ${formatPct(ci2.hi)}]`;
     });
 
-    initBoardLabels();
-    refreshSlots();
+    initPickPills();
+    buildPickerGrid();
     const empty = { scoop: 0, highOnly: 0, lowOnly: 0, quartered: 0, lose: 1 };
     setBar(elBarP1, empty, false, 0);
     setBar(elBarP2, empty, true, 0);
+    refreshAll();
   </script>
 </body>
 </html>
