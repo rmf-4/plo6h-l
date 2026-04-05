@@ -51,23 +51,27 @@
       overflow-x: hidden;
     }
 
-    .compact-header {
-      text-align: center;
+    .header {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 10px 16px;
       margin-bottom: 10px;
     }
 
-    .compact-header h1 {
-      font-size: clamp(1.05rem, 2.5vw, 1.35rem);
+    h1 {
+      margin: 0;
+      font-size: 1.35rem;
       font-weight: 700;
-      margin: 0 0 0.2rem;
-      letter-spacing: -0.02em;
+      color: #ffffff;
+      letter-spacing: 0.2px;
+      line-height: 1.2;
     }
 
-    .compact-header p {
-      margin: 0;
-      font-size: 0.72rem;
-      color: var(--text-dim);
-      line-height: 1.35;
+    .header-sub {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.55);
+      margin-top: 3px;
     }
 
     .main-stack {
@@ -651,17 +655,19 @@
 
         if (total > 0) {
           document.title = `PLO6 Hi/Lo Visualizer — Version ${total}`;
-          const h1 = document.querySelector('h1');
-          if (h1) h1.textContent = `PLO6 Hi/Lo Hand Equity Visualizer — Version ${total}`;
+          const appTitle = document.getElementById("appTitle");
+          if (appTitle) appTitle.textContent = `PLO6 Hi/Lo Hand Equity Visualizer - Version ${total}`;
         }
       } catch (e) {
       }
     })();
   </script>
-  <header class="compact-header">
-    <h1>PLO6 Hi/Lo Hand Equity Visualizer</h1>
-    <p>6-card Omaha Hi/Lo (8-or-better) · Must use exactly 2 hole cards + 3 board cards</p>
-  </header>
+  <div class="header">
+    <div class="header-main">
+      <h1 id="appTitle">PLO6 Hi/Lo Hand Equity Visualizer</h1>
+      <div class="header-sub">© 2026 Ryan Frank. All rights reserved. No reuse, copying, modification, or distribution without express written permission.</div>
+    </div>
+  </div>
 
   <main class="main-stack">
     <section class="section-card players-wrap player-section">
