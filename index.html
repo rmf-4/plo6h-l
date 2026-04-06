@@ -2148,6 +2148,7 @@ self.onmessage = function(e) {
       refreshAll();
 
       const knownBoard = state.board.map(c => c || null);
+      const simStart = performance.now();
 
       let res;
       try {
@@ -2195,6 +2196,7 @@ self.onmessage = function(e) {
         " · Lose " + formatPctInt(p2w.lose);
 
       const n = res.trials;
+      const simElapsedSec = ((performance.now() - simStart) / 1000).toFixed(2);
       const ci1 = wilsonCI(p1w.scoop, n);
       const ci2 = wilsonCI(p2w.scoop, n);
       elResultMeta.style.display = "block";
@@ -2202,7 +2204,7 @@ self.onmessage = function(e) {
       if (res.tieBoth > 0) parts.push(`Tie both sides: ${formatPct(res.tieBoth)}`);
       if (res.tieHighNoLow > 0) parts.push(`Tie high (no low): ${formatPct(res.tieHighNoLow)}`);
       elResultMeta.innerHTML =
-        `${n.toLocaleString()} trials` +
+        `${n.toLocaleString()} trials · ${simElapsedSec}s · ${numWorkers} cores` +
         (parts.length ? ` · ${parts.join(" · ")}` : "") +
         `<br />Approximate 95% Wilson intervals (scoop rate): P1 [${formatPct(ci1.lo)}, ${formatPct(ci1.hi)}], ` +
         `P2 [${formatPct(ci2.lo)}, ${formatPct(ci2.hi)}]`;
