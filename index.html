@@ -438,8 +438,11 @@
       color: var(--text-dim);
     }
 
-    .controls-row .trials-wrap input {
-      width: 110px;
+    .controls-row .trials-wrap input,
+    .trials-wrap input,
+    input#trials {
+      width: 120px;
+      max-width: none;
       padding: 0.35rem 0.4rem;
       border-radius: 5px;
       border: 1px solid var(--slot-border);
@@ -745,7 +748,7 @@
         <button type="button" class="btn-secondary" id="btn-clear">Clear All</button>
         <label class="trials-wrap">
           Trials
-          <input type="number" id="trials" min="1000" max="2000000" step="100000" value="1000000" />
+          <input type="number" id="trials" style="width: 120px;" min="1000" max="2000000" step="100000" value="1000000" />
         </label>
         <span class="card-counts" id="card-counts">P1: <b id="cc-p1">0</b>/6 &nbsp; Board: <b id="cc-b">0</b>/5 &nbsp; P2: <b id="cc-p2">0</b>/6</span>
       </div>
